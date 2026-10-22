@@ -29,6 +29,17 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
 - `apps/accounts`, `apps/parking`, `apps/bookings`, `apps/payments`, `apps/dashboard` feature apps (filled in later phases)
 - `templates/` base layout and partials, `static/` CSS and JS, `media/` uploads
 
+## Authentication and roles
+
+- Pages: `/accounts/register/`, `/accounts/login/`, `/accounts/profile/`, `/accounts/password/`; logout is a POST form.
+- Roles live on `Profile.role` (`user` or `admin`). Registration always creates `user`. Superusers are admin automatically; promote others in Django admin (Users > Profile inline).
+- Admin-only pages use `@admin_required`; APIs use `IsAdminRole`. `/dashboard/` is admin-only.
+- REST API (token auth, send header `Authorization: Token <key>`):
+  - `POST /api/auth/register/` `{username, password, first_name, last_name, email, phone}`
+  - `POST /api/auth/login/` `{username, password}`
+  - `POST /api/auth/logout/`
+  - `GET|PATCH /api/auth/profile/`
+
 ## Tests
 
 ```bash
@@ -37,4 +48,4 @@ python manage.py test
 
 ## Status
 
-Phase 1 (foundation) complete. See the phase roadmap for upcoming work.
+Phases 1-2 (foundation, authentication) complete. See the phase roadmap for upcoming work.

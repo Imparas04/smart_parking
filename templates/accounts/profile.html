@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<section class="auth-card card">
+  <h1>My profile</h1>
+  <p class="muted">Username: <strong>{{ request.user.username }}</strong> &middot; Role: <strong>{{ request.user.profile.get_role_display }}</strong></p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'accounts/_form_fields.html' %}
+    <button class="btn btn-primary btn-block" type="submit">Save changes</button>
+  </form>
+  <p class="muted"><a href="{% url 'accounts:password_change' %}">Change password</a></p>
+</section>
+{% endblock %}

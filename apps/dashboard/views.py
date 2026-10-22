@@ -1,3 +1,8 @@
 from django.shortcuts import render
 
-# Create your views here.
+from apps.accounts.decorators import admin_required
+
+
+@admin_required
+def index(request):
+    return render(request, 'dashboard/index.html')

@@ -32,3 +32,14 @@ main{flex:1}
   .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:#fff;flex-direction:column;align-items:stretch;padding:1rem;border-bottom:1px solid var(--border)}
   .nav-links.open{display:flex}
 }
+.auth-card{max-width:440px;margin:2.5rem auto}
+.auth-card h1{margin-top:0}
+.field{margin-bottom:1rem;display:flex;flex-direction:column;gap:.25rem}
+.field label{font-weight:600;font-size:.9rem}
+.field input,.field select{padding:.6rem .75rem;border:1px solid var(--border);border-radius:8px;font-size:1rem;width:100%}
+.field input:focus{outline:2px solid var(--primary);border-color:transparent}
+.field .help{color:var(--muted)}.field .help ul{margin:.25rem 0;padding-left:1.1rem}
+.field .error{color:var(--bad)}
+.btn-block{width:100%;text-align:center}
+.muted{color:var(--muted)}
+.inline-form{margin:0}
