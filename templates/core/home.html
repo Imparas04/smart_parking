@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Find and book parking in seconds</h1>
+  <p>Browse parking locations, check live slot availability, and reserve your spot online.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#">Find Parking</a>
+    <a class="btn btn-ghost" href="#how-it-works">How it works</a>
+  </div>
+</section>
+
+<section id="features" class="section">
+  <h2>Features</h2>
+  <div class="grid">
+    <article class="card"><h3>Live availability</h3><p>See available and occupied slots at every location.</p></article>
+    <article class="card"><h3>Easy booking</h3><p>Reserve a slot, get a confirmation, cancel eligible bookings.</p></article>
+    <article class="card"><h3>Transparent fees</h3><p>Charges are calculated from parking duration.</p></article>
+    <article class="card"><h3>Admin tools</h3><p>Manage locations, slots, users, bookings and revenue.</p></article>
+  </div>
+</section>
+
+<section id="how-it-works" class="section">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li>Create an account</li>
+    <li>Search a parking location</li>
+    <li>Pick an available slot and book</li>
+    <li>Check in, park, check out and pay</li>
+  </ol>
+</section>
+{% endblock %}
