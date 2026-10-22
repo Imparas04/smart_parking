@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Parking Locations{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="page-head">
+    <h1>Parking locations</h1>
+    {% if user.profile.is_admin_role %}<a class="btn btn-primary" href="{% url 'parking:location_create' %}">+ Add location</a>{% endif %}
+  </div>
+  <form method="get" class="filters card">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search name, address or city">
+    <select name="city">
+      <option value="">All cities</option>
+      {% for c in cities %}<option value="{{ c }}" {% if c == city %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+    <select name="slot_type">
+      <option value="">Any slot type</option>
+      {% for value, label in slot_types %}<option value="{{ value }}" {% if value == slot_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <label class="check"><input type="checkbox" name="available" value="1" {% if only_available %}checked{% endif %}> Has free slots</label>
+    <button class="btn btn-primary" type="submit">Search</button>
+    <a class="btn btn-ghost" href="{% url 'parking:location_list' %}">Reset</a>
+  </form>
+
+  {% if page.object_list %}
+  <div class="grid">
+    {% for loc in page.object_list %}
+    <article class="card">
+      <h3><a href="{{ loc.get_absolute_url }}">{{ loc.name }}</a>{% if not loc.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</h3>
+      <p class="muted">{{ loc.address }}, {{ loc.city }}</p>
+      <p><strong>&#8377;{{ loc.hourly_rate }}</strong> / hour</p>
+      <p>
+        <span class="badge badge-available">{{ loc.available_slots }} free</span>
+        <span class="muted">of {{ loc.total_slots }} slots</span>
+      </p>
+      <a class="btn btn-ghost" href="{{ loc.get_absolute_url }}">View slots</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pager">
+    {% if page.has_previous %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.previous_page_number }}">&larr; Prev</a>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty card"><h3>No parking locations found</h3><p class="muted">Try a different search or clear the filters.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -40,6 +40,15 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
   - `POST /api/auth/logout/`
   - `GET|PATCH /api/auth/profile/`
 
+## Parking locations and slots
+
+- Public pages: `/parking/` (search by name/address/city, city, slot type and "has free slots" filters), `/parking/<id>/` (colour-coded slot grid), `/parking/slots/<id>/`.
+- Admin pages (admin role only): add/edit/delete locations and slots, plus bulk slot creation, from the same pages (buttons appear for admins). Django admin also works.
+- Slot status is set by admins for now (available, occupied, unavailable). Later phases update it automatically from bookings and check-in/out.
+- Hourly rate is stored per location and used for pricing in Phase 5. Currency is shown as INR.
+- Demo data: `python manage.py seed_parking` (safe to run repeatedly).
+- API (read: anyone, write: admin role): `/api/parking/locations/` (`?search=&city=&available=1`) and `/api/parking/slots/` (`?location=&status=&slot_type=`); paginated, 20 per page.
+
 ## Tests
 
 ```bash
@@ -48,4 +57,4 @@ python manage.py test
 
 ## Status
 
-Phases 1-2 (foundation, authentication) complete. See the phase roadmap for upcoming work.
+Phases 1-3 (foundation, authentication, locations and slots) complete. See the phase roadmap for upcoming work.

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ location.name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <p><a href="{% url 'parking:location_list' %}">&larr; All locations</a></p>
+  <div class="page-head">
+    <div>
+      <h1>{{ location.name }}{% if not location.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</h1>
+      <p class="muted">{{ location.address }}, {{ location.city }} &middot; Open {{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }} &middot; <strong>&#8377;{{ location.hourly_rate }}</strong>/hour</p>
+    </div>
+    {% if user.profile.is_admin_role %}
+    <div class="actions">
+      <a class="btn btn-ghost" href="{% url 'parking:location_update' location.pk %}">Edit</a>
+      <a class="btn btn-ghost" href="{% url 'parking:slot_create' location.pk %}">+ Slot</a>
+      <a class="btn btn-ghost" href="{% url 'parking:slot_bulk_create' location.pk %}">+ Many slots</a>
+      <a class="btn btn-danger" href="{% url 'parking:location_delete' location.pk %}">Delete</a>
+    </div>
+    {% endif %}
+  </div>
+  {% if location.description %}<p>{{ location.description }}</p>{% endif %}
+
+  <div class="legend">
+    <span><i class="dot slot-available"></i> Available ({{ available }})</span>
+    <span><i class="dot slot-occupied"></i> Occupied ({{ occupied }})</span>
+    <span><i class="dot slot-unavailable"></i> Unavailable ({{ unavailable }})</span>
+    <form method="get" class="inline-form">
+      <select name="slot_type" onchange="this.form.submit()">
+        <option value="">All types</option>
+        {% for value, label in slot_types %}<option value="{{ value }}" {% if value == slot_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </form>
+  </div>
+
+  {% if slots %}
+  <div class="slot-grid">
+    {% for slot in slots %}
+    <a class="slot slot-{{ slot.status }}" href="{{ slot.get_absolute_url }}" title="{{ slot.get_status_display }} &middot; {{ slot.get_slot_type_display }}">
+      <strong>{{ slot.slot_number }}</strong><small>{{ slot.get_slot_type_display }}</small>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty card"><h3>No slots to show</h3><p class="muted">{% if total %}No slots match this type.{% else %}This location has no slots yet.{% endif %}</p></div>
+  {% endif %}
+</section>
+{% endblock %}

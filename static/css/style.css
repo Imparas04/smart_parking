@@ -43,3 +43,30 @@ main{flex:1}
 .btn-block{width:100%;text-align:center}
 .muted{color:var(--muted)}
 .inline-form{margin:0}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.page-head h1{margin:0}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.filters{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem}
+.filters input[type=search],.filters select,.legend select{padding:.55rem .75rem;border:1px solid var(--border);border-radius:8px;font-size:.95rem}
+.filters input[type=search]{flex:1;min-width:180px}
+.check{display:flex;gap:.35rem;align-items:center;font-size:.95rem}
+.badge{display:inline-block;padding:.1rem .55rem;border-radius:999px;font-size:.8rem;font-weight:600}
+.badge-available{background:#dcfce7;color:#166534}
+.badge-occupied{background:#fee2e2;color:#991b1b}
+.badge-unavailable{background:#e2e8f0;color:#475569}
+.btn-danger{background:var(--bad);color:#fff!important}
+.pager{display:flex;gap:1rem;align-items:center;justify-content:center;margin-top:1.5rem}
+.empty{text-align:center;padding:2rem}
+.legend{display:flex;gap:1.25rem;flex-wrap:wrap;align-items:center;margin:1rem 0}
+.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.3rem;vertical-align:middle}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.6rem}
+.slot{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.8rem .4rem;border-radius:10px;border:2px solid;text-decoration:none;color:var(--text)}
+.slot small{font-size:.72rem;opacity:.8}
+.slot-available{background:#dcfce7;border-color:#86efac}
+.slot-occupied{background:#fee2e2;border-color:#fca5a5}
+.slot-unavailable{background:#e2e8f0;border-color:#cbd5e1;color:#64748b}
+.dot.slot-available{background:#22c55e}.dot.slot-occupied{background:#ef4444}.dot.slot-unavailable{background:#94a3b8}
+.slot:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.auth-card.wide{max-width:640px}
+.details{display:grid;grid-template-columns:110px 1fr;gap:.4rem 1rem}
+.details dt{color:var(--muted)}.details dd{margin:0}

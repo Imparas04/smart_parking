@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Slot {{ slot.slot_number }}{% endblock %}
+{% block content %}
+<section class="auth-card card wide">
+  <p><a href="{{ location.get_absolute_url }}">&larr; {{ location.name }}</a></p>
+  <h1>Slot {{ slot.slot_number }} <span class="badge badge-{{ slot.status }}">{{ slot.get_status_display }}</span></h1>
+  <dl class="details">
+    <dt>Location</dt><dd>{{ location.name }}, {{ location.city }}</dd>
+    <dt>Address</dt><dd>{{ location.address }}</dd>
+    <dt>Slot type</dt><dd>{{ slot.get_slot_type_display }}</dd>
+    <dt>Rate</dt><dd>&#8377;{{ location.hourly_rate }} per hour</dd>
+    <dt>Hours</dt><dd>{{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }}</dd>
+    {% if slot.notes %}<dt>Notes</dt><dd>{{ slot.notes }}</dd>{% endif %}
+  </dl>
+  {% if slot.status == 'available' %}
+    <p class="muted">Online booking for this slot arrives in the next phase.</p>
+  {% else %}
+    <p class="muted">This slot is currently {{ slot.get_status_display|lower }}.</p>
+  {% endif %}
+  {% if user.profile.is_admin_role %}
+  <div class="actions">
+    <a class="btn btn-ghost" href="{% url 'parking:slot_update' slot.pk %}">Edit</a>
+    <a class="btn btn-danger" href="{% url 'parking:slot_delete' slot.pk %}">Delete</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
