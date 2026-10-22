@@ -28,6 +28,11 @@ class ParkingLocation(models.Model):
     def __str__(self):
         return f'{self.name} ({self.city})'
 
+    @property
+    def is_24h(self):
+        from datetime import time
+        return self.opening_time <= time(0, 0) and self.closing_time >= time(23, 59)
+
     def get_absolute_url(self):
         return reverse('parking:location_detail', args=[self.pk])
 

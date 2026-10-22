@@ -160,6 +160,12 @@ LOGOUT_REDIRECT_URL = 'core:home'
 
 SITE_NAME = 'SmartPark'
 
+# Booking rules
+BOOKING_MIN_MINUTES = 30
+BOOKING_MAX_HOURS = 24
+BOOKING_MAX_ADVANCE_DAYS = 30
+BOOKING_CANCEL_CUTOFF_MINUTES = 60
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Booking {{ booking.reference }}{% endblock %}
+{% block content %}
+<section class="auth-card card wide">
+  <p><a href="{% url 'bookings:history' %}">&larr; My bookings</a></p>
+  <h1>Booking {{ booking.reference }} <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span></h1>
+  <dl class="details">
+    <dt>Location</dt><dd><a href="{{ booking.slot.location.get_absolute_url }}">{{ booking.slot.location.name }}</a>, {{ booking.slot.location.city }}</dd>
+    <dt>Address</dt><dd>{{ booking.slot.location.address }}</dd>
+    <dt>Slot</dt><dd>{{ booking.slot.slot_number }} ({{ booking.slot.get_slot_type_display }})</dd>
+    <dt>Vehicle</dt><dd>{{ booking.vehicle.plate_number }} &middot; {{ booking.vehicle.get_vehicle_type_display }}</dd>
+    <dt>From</dt><dd>{{ booking.start_time|date:"D, d M Y, H:i" }}</dd>
+    <dt>To</dt><dd>{{ booking.end_time|date:"D, d M Y, H:i" }}</dd>
+    <dt>Rate</dt><dd>&#8377;{{ booking.slot.location.hourly_rate }} per hour</dd>
+    {% if booking.cancelled_at %}<dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"d M Y, H:i" }}</dd>{% endif %}
+  </dl>
+  {% if booking.status == 'confirmed' %}
+    {% if cancel_reason %}
+      <p class="muted">{{ cancel_reason }}</p>
+    {% else %}
+      <form method="post" action="{% url 'bookings:cancel' booking.reference %}" onsubmit="return confirm('Cancel this booking?');">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Cancel booking</button>
+      </form>
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

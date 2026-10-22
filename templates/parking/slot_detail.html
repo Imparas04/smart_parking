@@ -12,10 +12,13 @@
     <dt>Hours</dt><dd>{{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }}</dd>
     {% if slot.notes %}<dt>Notes</dt><dd>{{ slot.notes }}</dd>{% endif %}
   </dl>
-  {% if slot.status == 'available' %}
-    <p class="muted">Online booking for this slot arrives in the next phase.</p>
+  {% if not location.is_active or slot.status == 'unavailable' %}
+    <p class="muted">This slot is currently unavailable for booking.</p>
+  {% elif user.is_authenticated %}
+    {% if slot.status == 'occupied' %}<p class="muted">Currently occupied &mdash; you can still reserve a later time.</p>{% endif %}
+    <a class="btn btn-primary" href="{% url 'bookings:book' slot.pk %}">Book this slot</a>
   {% else %}
-    <p class="muted">This slot is currently {{ slot.get_status_display|lower }}.</p>
+    <a class="btn btn-primary" href="{% url 'accounts:login' %}?next={% url 'bookings:book' slot.pk %}">Login to book</a>
   {% endif %}
   {% if user.profile.is_admin_role %}
   <div class="actions">

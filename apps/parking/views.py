@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, ProtectedError, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.accounts.decorators import admin_required
@@ -91,7 +91,11 @@ def location_update(request, pk):
 def location_delete(request, pk):
     loc = get_object_or_404(ParkingLocation, pk=pk)
     if request.method == 'POST':
-        loc.delete()
+        try:
+            loc.delete()
+        except ProtectedError:
+            messages.error(request, 'This location has bookings and cannot be deleted. Mark it inactive instead.')
+            return redirect(loc)
         messages.success(request, 'Location and its slots deleted.')
         return redirect('parking:location_list')
     return render(request, 'parking/confirm_delete.html', {
@@ -139,7 +143,11 @@ def slot_delete(request, pk):
     slot = get_object_or_404(ParkingSlot.objects.select_related('location'), pk=pk)
     if request.method == 'POST':
         loc = slot.location
-        slot.delete()
+        try:
+            slot.delete()
+        except ProtectedError:
+            messages.error(request, 'This slot has bookings and cannot be deleted. Mark it unavailable instead.')
+            return redirect(slot)
         messages.success(request, 'Slot deleted.')
         return redirect(loc)
     return render(request, 'parking/confirm_delete.html', {

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Book slot {{ slot.slot_number }}{% endblock %}
+{% block content %}
+<section class="auth-card card wide">
+  <p><a href="{{ slot.get_absolute_url }}">&larr; Slot {{ slot.slot_number }}</a></p>
+  <h1>Book slot {{ slot.slot_number }}</h1>
+  <p class="muted">{{ location.name }}, {{ location.city }} &middot; {{ slot.get_slot_type_display }} &middot; &#8377;{{ location.hourly_rate }}/hour
+    {% if not location.is_24h %}&middot; Open {{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }}{% endif %}</p>
+  {% if busy %}
+  <div class="alert">
+    <strong>Already reserved:</strong>
+    <ul class="plain">{% for b in busy %}<li>{{ b.start_time|date:"d M, H:i" }} &ndash; {{ b.end_time|date:"d M, H:i" }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'accounts/_form_fields.html' %}
+    <button class="btn btn-primary btn-block" type="submit">Confirm booking</button>
+  </form>
+  <p class="muted">Final charges are calculated from the booked duration and the hourly rate.</p>
+</section>
+{% endblock %}

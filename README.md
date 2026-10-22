@@ -49,6 +49,16 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
 - Demo data: `python manage.py seed_parking` (safe to run repeatedly).
 - API (read: anyone, write: admin role): `/api/parking/locations/` (`?search=&city=&available=1`) and `/api/parking/slots/` (`?location=&status=&slot_type=`); paginated, 20 per page.
 
+## Bookings
+
+- Pages (login required): `/bookings/` (history with status filters), `/bookings/book/<slot_id>/`, `/bookings/<reference>/` (confirmation and cancel). Users only ever see their own bookings.
+- Rules (change in `config/settings.py`): minimum 30 minutes, maximum 24 hours, up to 30 days ahead, cancellation allowed until 60 minutes before start.
+- Double-booking protection: `apps/bookings/services.py` locks the slot row (`select_for_update`) inside a transaction and rejects overlapping confirmed/checked-in bookings (back-to-back is allowed). The same vehicle cannot overlap itself. SQLite serialises writers at database level; row locking applies on MySQL/PostgreSQL.
+- Slots marked `unavailable` or in inactive locations cannot be booked. `occupied` slots can still be booked for a later time.
+- Locations, slots, vehicles and users that have bookings cannot be deleted (use inactive/unavailable instead).
+- API (login required; token or session): `POST/GET /api/bookings/` (`?status=&slot=&location=`), `GET /api/bookings/<reference>/`, `POST /api/bookings/<reference>/cancel/`, `GET/POST/DELETE /api/bookings/vehicles/`. Admins can read all bookings.
+- Pricing, payment status and check-in/out arrive in Phase 5.
+
 ## Tests
 
 ```bash
@@ -57,4 +67,4 @@ python manage.py test
 
 ## Status
 
-Phases 1-3 (foundation, authentication, locations and slots) complete. See the phase roadmap for upcoming work.
+Phases 1-4 (foundation, authentication, locations and slots, bookings) complete. See the phase roadmap for upcoming work.

@@ -1,8 +1,9 @@
-from django.db.models import Count, Q
+from django.db.models import Count, ProtectedError, Q
 from rest_framework import viewsets
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from apps.accounts.permissions import is_admin
+from apps.core.exceptions import Conflict
 
 from .models import ParkingLocation, ParkingSlot
 from .serializers import LocationSerializer, SlotSerializer
@@ -13,7 +14,15 @@ class ReadAnyWriteAdmin(BasePermission):
         return request.method in SAFE_METHODS or is_admin(request.user)
 
 
-class LocationViewSet(viewsets.ModelViewSet):
+class ProtectedDeleteMixin:
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+        except ProtectedError:
+            raise Conflict('Cannot delete: related bookings exist. Deactivate it instead.')
+
+
+class LocationViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     serializer_class = LocationSerializer
     permission_classes = [ReadAnyWriteAdmin]
 
@@ -35,7 +44,7 @@ class LocationViewSet(viewsets.ModelViewSet):
         return qs
 
 
-class SlotViewSet(viewsets.ModelViewSet):
+class SlotViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     serializer_class = SlotSerializer
     permission_classes = [ReadAnyWriteAdmin]
 

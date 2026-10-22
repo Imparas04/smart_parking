@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="page-head"><h1>My bookings</h1><a class="btn btn-primary" href="{% url 'parking:location_list' %}">Find parking</a></div>
+  <nav class="tabs">
+    <a class="{% if not status %}active{% endif %}" href="{% url 'bookings:history' %}">All</a>
+    {% for value, label in statuses %}<a class="{% if status == value %}active{% endif %}" href="?status={{ value }}">{{ label }}</a>{% endfor %}
+  </nav>
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Reference</th><th>Location / slot</th><th>Vehicle</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for b in page.object_list %}
+        <tr>
+          <td><a href="{{ b.get_absolute_url }}">{{ b.reference }}</a></td>
+          <td>{{ b.slot.location.name }} / {{ b.slot.slot_number }}</td>
+          <td>{{ b.vehicle.plate_number }}</td>
+          <td>{{ b.start_time|date:"d M Y, H:i" }}</td>
+          <td>{{ b.end_time|date:"d M Y, H:i" }}</td>
+          <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+          <td><a class="btn btn-ghost" href="{{ b.get_absolute_url }}">View</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pager">
+    {% if page.has_previous %}<a class="btn btn-ghost" href="?status={{ status }}&page={{ page.previous_page_number }}">&larr; Prev</a>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-ghost" href="?status={{ status }}&page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty card"><h3>No bookings yet</h3><p class="muted">{% if status %}No bookings with this status.{% else %}Find a parking location and book your first slot.{% endif %}</p></div>
+  {% endif %}
+</section>
+{% endblock %}

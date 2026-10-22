@@ -7,6 +7,7 @@
       <a href="{% url 'parking:location_list' %}">Parking</a>
       {% if user.is_authenticated %}
         {% if user.profile.is_admin_role %}<a href="{% url 'dashboard:index' %}">Dashboard</a>{% endif %}
+        <a href="{% url 'bookings:history' %}">My Bookings</a>
         <a href="{% url 'accounts:profile' %}">{{ user.first_name|default:user.username }}</a>
         <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">
           {% csrf_token %}
