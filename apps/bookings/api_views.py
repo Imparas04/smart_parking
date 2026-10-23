@@ -5,12 +5,13 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from apps.accounts.permissions import is_admin
+from apps.accounts.permissions import IsAdminRole, is_admin
 from apps.core.exceptions import Conflict
 
 from . import services
 from .models import Booking, Vehicle
-from .serializers import BookingCreateSerializer, BookingSerializer, VehicleSerializer
+from .serializers import (BookingCreateSerializer, BookingSerializer, BookingStatusSerializer,
+                          VehicleSerializer)
 
 
 def _raise(exc):
@@ -99,3 +100,11 @@ class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     def check_out(self, request, reference=None):
         """Owner or admin (parking attendant)."""
         return self._transition(request, services.check_out)
+
+    @action(detail=True, methods=['patch'], url_path='status', permission_classes=[IsAdminRole])
+    def set_status(self, request, reference=None):
+        """Admin: confirmed -> checked_in | cancelled | no_show, checked_in -> completed."""
+        booking = self.get_object()
+        ser = BookingStatusSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        return self._transition(request, lambda b: services.admin_set_status(b, ser.validated_data['status']))

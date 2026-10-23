@@ -1,0 +1,6 @@
+<nav class="tabs subnav">
+  <a class="{% if nav == 'overview' %}active{% endif %}" href="{% url 'dashboard:index' %}">Overview</a>
+  <a class="{% if nav == 'bookings' %}active{% endif %}" href="{% url 'dashboard:bookings' %}">Bookings</a>
+  <a class="{% if nav == 'users' %}active{% endif %}" href="{% url 'dashboard:users' %}">Users</a>
+  <a href="{% url 'parking:location_list' %}">Locations &amp; slots</a>
+</nav>

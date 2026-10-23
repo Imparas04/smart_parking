@@ -89,20 +89,24 @@ class Booking(models.Model):
     def duration(self):
         return self.end_time - self.start_time
 
-    def cancel_block_reason(self, now=None):
+    def cancel_block_reason(self, now=None, ignore_cutoff=False):
         """Return why this booking can't be cancelled, or None if it can."""
         now = now or timezone.now()
         if self.status != self.CONFIRMED:
             return f'Only confirmed bookings can be cancelled (this one is {self.get_status_display().lower()}).'
+        if ignore_cutoff:
+            return None
         cutoff = timedelta(minutes=settings.BOOKING_CANCEL_CUTOFF_MINUTES)
         if self.start_time - now < cutoff:
             return f'Bookings can only be cancelled at least {settings.BOOKING_CANCEL_CUTOFF_MINUTES} minutes before the start time.'
         return None
 
-    def check_in_block_reason(self, now=None):
+    def check_in_block_reason(self, now=None, ignore_window=False):
         now = now or timezone.now()
         if self.status != self.CONFIRMED:
             return f'Only confirmed bookings can be checked in (this one is {self.get_status_display().lower()}).'
+        if ignore_window:
+            return None
         opens = self.start_time - timedelta(minutes=settings.BOOKING_CHECKIN_EARLY_MINUTES)
         if now < opens:
             return f'Check-in opens {settings.BOOKING_CHECKIN_EARLY_MINUTES} minutes before the start time.'

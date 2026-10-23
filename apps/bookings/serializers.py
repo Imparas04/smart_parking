@@ -55,3 +55,7 @@ class BookingCreateSerializer(serializers.Serializer):
         if not attrs.get('vehicle') and not attrs.get('plate_number'):
             raise serializers.ValidationError('Provide a vehicle id or a plate_number.')
         return attrs
+
+
+class BookingStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Booking.STATUS_CHOICES)

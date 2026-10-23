@@ -1,8 +1,63 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Admin Dashboard{% endblock %}
 {% block content %}
 <section class="section">
-  <h1>Admin dashboard</h1>
-  <p class="muted">Statistics and management tools arrive in a later phase.</p>
+  <div class="page-head">
+    <h1>Admin dashboard</h1>
+    <form method="get" class="inline-form">
+      <label class="muted small" for="days">Daily charts:</label>
+      <select id="days" name="days" onchange="this.form.submit()">
+        {% for d in day_options %}<option value="{{ d }}" {% if d == days %}selected{% endif %}>Last {{ d }} days</option>{% endfor %}
+      </select>
+    </form>
+  </div>
+  {% include 'dashboard/_nav.html' %}
+
+  <div class="stat-cards">
+    <div class="stat"><span>Revenue (all time)</span><strong>&#8377;{{ s.cards.revenue_total|floatformat:2 }}</strong></div>
+    <div class="stat"><span>Revenue today</span><strong>&#8377;{{ s.cards.revenue_today|floatformat:2 }}</strong></div>
+    <div class="stat"><span>Revenue (last {{ days }} days)</span><strong>&#8377;{{ s.cards.revenue_period|floatformat:2 }}</strong></div>
+    <div class="stat"><span>Pending dues</span><strong>&#8377;{{ s.cards.dues_pending|floatformat:2 }}</strong></div>
+    <div class="stat"><span>Total bookings</span><strong>{{ s.cards.bookings_total }}</strong><small>{{ s.cards.bookings_active }} active &middot; {{ s.cards.bookings_today }} today</small></div>
+    <div class="stat"><span>Slots</span><strong>{{ s.cards.slots_total }}</strong><small>{{ s.cards.slots_available }} free &middot; {{ s.cards.slots_occupied }} occupied &middot; {{ s.cards.slots_unavailable }} unavailable</small></div>
+    <div class="stat"><span>Occupancy</span><strong>{{ s.cards.occupancy_pct }}%</strong><small>of all slots right now</small></div>
+    <div class="stat"><span>Locations / users</span><strong>{{ s.cards.locations_total }} / {{ s.cards.users_total }}</strong><small>{{ s.cards.locations_active }} locations active</small></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="card"><h3>Slot availability</h3><div class="chart-box"><canvas id="chartSlots" aria-label="Slot availability chart" role="img"></canvas></div></div>
+    <div class="card"><h3>Bookings by status</h3><div class="chart-box"><canvas id="chartStatus" aria-label="Bookings by status chart" role="img"></canvas></div></div>
+    <div class="card"><h3>Bookings per day</h3><div class="chart-box"><canvas id="chartBookings" aria-label="Bookings per day chart" role="img"></canvas></div></div>
+    <div class="card"><h3>Revenue per day (&#8377;)</h3><div class="chart-box"><canvas id="chartRevenue" aria-label="Revenue per day chart" role="img"></canvas></div></div>
+    <div class="card chart-wide"><h3>Availability by location</h3><div class="chart-box"><canvas id="chartLocations" aria-label="Availability by location chart" role="img"></canvas></div></div>
+  </div>
+
+  <h2>Locations: availability &amp; revenue</h2>
+  {% if s.locations %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Location</th><th>Slots</th><th>Free</th><th>Occupied</th><th>Unavailable</th><th>Occupancy</th><th>Paid bookings</th><th>Revenue</th></tr></thead>
+      <tbody>
+      {% for l in s.locations %}
+        <tr>
+          <td><a href="{% url 'parking:location_detail' l.id %}">{{ l.name }}</a>, {{ l.city }}{% if not l.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</td>
+          <td>{{ l.total }}</td><td>{{ l.available }}</td><td>{{ l.occupied }}</td><td>{{ l.unavailable }}</td>
+          <td>{{ l.occupancy_pct }}%</td><td>{{ l.paid_bookings }}</td><td>&#8377;{{ l.revenue|floatformat:2 }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty card"><h3>No locations yet</h3><p class="muted">Add a parking location to start seeing availability and revenue.</p>
+    <a class="btn btn-primary" href="{% url 'parking:location_create' %}">Add location</a></div>
+  {% endif %}
+  <p class="muted small">Revenue counts money received (paid and part-paid); refunded and cancelled payments are excluded. Daily revenue is attributed to the date of the latest payment.</p>
+  {{ s.charts|json_script:"chart-data" }}
 </section>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

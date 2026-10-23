@@ -98,10 +98,11 @@ def create_booking(user, slot_id, start, end, vehicle=None, plate_number='', veh
         return booking
 
 
-def cancel_booking(booking):
+def cancel_booking(booking, force=False):
+    """force=True (admin) skips the cancellation cut-off; the booking must still be confirmed."""
     with transaction.atomic():
         locked = Booking.objects.select_for_update().get(pk=booking.pk)
-        reason = locked.cancel_block_reason()
+        reason = locked.cancel_block_reason(ignore_cutoff=force)
         if reason:
             raise ValidationError(reason)
         locked.status = Booking.CANCELLED
@@ -111,11 +112,11 @@ def cancel_booking(booking):
         return locked
 
 
-def check_in(booking):
+def check_in(booking, enforce_window=True):
     with transaction.atomic():
         slot = ParkingSlot.objects.select_for_update().get(pk=booking.slot_id)
         locked = Booking.objects.select_for_update().get(pk=booking.pk)
-        reason = locked.check_in_block_reason()
+        reason = locked.check_in_block_reason(ignore_window=not enforce_window)
         if reason:
             raise ValidationError(reason)
         if slot.status == ParkingSlot.STATUS_UNAVAILABLE:
@@ -151,17 +152,46 @@ def check_out(booking):
         return locked
 
 
+def mark_no_show(booking, require_started=False):
+    with transaction.atomic():
+        locked = Booking.objects.select_for_update().get(pk=booking.pk)
+        if locked.status != Booking.CONFIRMED:
+            raise ValidationError(f'Only confirmed bookings can be marked as no-show (this one is {locked.get_status_display().lower()}).')
+        if require_started and timezone.now() < locked.start_time:
+            raise ValidationError('A booking cannot be marked as no-show before it starts.')
+        locked.status = Booking.NO_SHOW
+        locked.save(update_fields=['status', 'updated_at'])
+        payment_services.on_booking_no_show(locked)
+        return locked
+
+
 def mark_no_shows(now=None):
     """Confirmed bookings whose period has ended without a check-in become no-shows (not charged)."""
     now = now or timezone.now()
     count = 0
     for b in Booking.objects.filter(status=Booking.CONFIRMED, end_time__lt=now):
-        with transaction.atomic():
-            locked = Booking.objects.select_for_update().get(pk=b.pk)
-            if locked.status != Booking.CONFIRMED:
-                continue
-            locked.status = Booking.NO_SHOW
-            locked.save(update_fields=['status', 'updated_at'])
-            payment_services.on_booking_no_show(locked)
-            count += 1
+        try:
+            mark_no_show(b)
+        except ValidationError:
+            continue  # changed concurrently
+        count += 1
     return count
+
+
+# Booking status changes an admin may make by hand, and what each one does.
+ADMIN_TRANSITIONS = {
+    Booking.CONFIRMED: {Booking.CHECKED_IN, Booking.CANCELLED, Booking.NO_SHOW},
+    Booking.CHECKED_IN: {Booking.COMPLETED},
+}
+
+
+def admin_set_status(booking, new_status):
+    if new_status not in ADMIN_TRANSITIONS.get(booking.status, set()):
+        raise ValidationError(f'Cannot change a {booking.get_status_display().lower()} booking to {new_status.replace("_", " ")}.')
+    if new_status == Booking.CHECKED_IN:
+        return check_in(booking, enforce_window=False)
+    if new_status == Booking.COMPLETED:
+        return check_out(booking)
+    if new_status == Booking.CANCELLED:
+        return cancel_booking(booking, force=True)
+    return mark_no_show(booking, require_started=True)

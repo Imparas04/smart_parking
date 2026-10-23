@@ -67,6 +67,15 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
 - **No-shows**: run `python manage.py expire_bookings` periodically (cron). Confirmed bookings that ended unused become `no_show` and are not charged.
 - **API**: `GET /api/payments/` (`?status=&booking=`), `GET /api/payments/<id>/`, `POST /api/payments/<id>/pay/` `{method: card|upi|wallet, outcome: success|fail}` (a simulated failure still returns 200; check `status`), `PATCH /api/payments/<id>/status/` (admin: `{status, note}`; allowed: pending->paid/failed/cancelled, failed->pending/paid/cancelled, paid->refunded), `POST /api/bookings/<reference>/check-in/` and `/check-out/` (owner or admin).
 
+## Admin dashboard and reports (admin role only)
+
+- `/dashboard/` overview: revenue (today, selected period, all time), pending dues, bookings, slot availability, occupancy, plus Chart.js charts (slot availability, bookings by status, bookings per day, revenue per day, availability by location) and a per-location table. Choose 7/14/30/90 days for the daily charts. Chart.js 4.4.7 (MIT) is vendored in `static/js/vendor/`, so no CDN is needed.
+- Revenue = money received (paid plus part-paid balances); refunded and cancelled payments are excluded. Daily revenue is attributed to the date of the latest payment.
+- `/dashboard/bookings/`: every booking with filters (search, status, payment, location, date range) and `Export CSV` (same filters, max 10,000 rows, spreadsheet-formula safe). Booking detail lets admins update the booking status (confirmed -> checked in / cancelled / no-show, checked in -> completed; cancel skips the user cut-off, no-show only after the start time) and the payment status (see Phase 5 transitions). All changes go through the same service rules as users' actions (slot status, refunds, charges).
+- `/dashboard/users/`: search and filter users, activate/deactivate, promote/demote. You cannot change your own account or a superuser (use Django admin), so at least one admin always remains.
+- Locations and slots are managed from `/parking/` (admin buttons), linked from the dashboard.
+- API (admin only): `GET /api/dashboard/summary/?days=14` (money as strings, `charts` arrays numeric), `PATCH /api/bookings/<reference>/status/` `{status}`.
+
 ## Tests
 
 ```bash
@@ -75,4 +84,4 @@ python manage.py test
 
 ## Status
 
-Phases 1-5 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in) complete. See the phase roadmap for upcoming work.
+Phases 1-6 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in, admin dashboard) complete. See the phase roadmap for upcoming work.

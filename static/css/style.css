@@ -94,3 +94,13 @@ ul.plain{margin:.4rem 0 0;padding-left:1.1rem}
 .stack-top{margin-top:1rem}
 .sim-banner{background:#fef3c7;border:1px solid #fcd34d;color:#78350f;padding:.7rem 1rem;border-radius:8px;margin-bottom:1rem}
 .estimate{font-weight:600;color:var(--primary-dark);background:#eff6ff;padding:.6rem .9rem;border-radius:8px}
+.subnav{margin-bottom:1.25rem}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.8rem;margin-bottom:1.25rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.15rem}
+.stat span{color:var(--muted);font-size:.85rem}.stat strong{font-size:1.5rem}.stat small{color:var(--muted);font-size:.78rem}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;margin-bottom:1.5rem}
+.chart-grid .card h3{margin:0 0 .5rem}
+.chart-box{position:relative;height:260px}
+.chart-wide{grid-column:1/-1}.chart-wide .chart-box{height:320px}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr}}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Booking {{ booking.reference }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="page-head"><h1>Booking {{ booking.reference }} <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span></h1></div>
+  {% include 'dashboard/_nav.html' %}
+  <p><a href="{% url 'dashboard:bookings' %}">&larr; All bookings</a></p>
+  <div class="two-col">
+    <div class="card">
+      <h3>Booking</h3>
+      <dl class="details">
+        <dt>User</dt><dd>{{ booking.user.username }} ({{ booking.user.email }})</dd>
+        <dt>Location</dt><dd><a href="{{ booking.slot.location.get_absolute_url }}">{{ booking.slot.location.name }}</a>, {{ booking.slot.location.city }}</dd>
+        <dt>Slot</dt><dd><a href="{{ booking.slot.get_absolute_url }}">{{ booking.slot.slot_number }}</a> ({{ booking.slot.get_status_display }} now)</dd>
+        <dt>Vehicle</dt><dd>{{ booking.vehicle.plate_number }} &middot; {{ booking.vehicle.get_vehicle_type_display }}</dd>
+        <dt>From</dt><dd>{{ booking.start_time|date:"D, d M Y, H:i" }}</dd>
+        <dt>To</dt><dd>{{ booking.end_time|date:"D, d M Y, H:i" }}</dd>
+        <dt>Rate</dt><dd>&#8377;{{ booking.hourly_rate }}/hour</dd>
+        {% if booking.checked_in_at %}<dt>Checked in</dt><dd>{{ booking.checked_in_at|date:"d M Y, H:i" }}</dd>{% endif %}
+        {% if booking.checked_out_at %}<dt>Checked out</dt><dd>{{ booking.checked_out_at|date:"d M Y, H:i" }}</dd>{% endif %}
+        {% if booking.cancelled_at %}<dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"d M Y, H:i" }}</dd>{% endif %}
+      </dl>
+      {% if actions %}
+      <h4>Update booking status</h4>
+      <div class="actions">
+        {% for value, label in actions %}
+        <form method="post" action="{% url 'dashboard:booking_status' booking.reference %}" onsubmit="return confirm('{{ label }}?');">
+          {% csrf_token %}<input type="hidden" name="status" value="{{ value }}">
+          <button class="btn {% if value == 'cancelled' %}btn-danger{% else %}btn-ghost{% endif %}" type="submit">{{ label }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% else %}<p class="muted">This booking is {{ booking.get_status_display|lower }}; its status can no longer be changed.</p>{% endif %}
+    </div>
+    <div class="card">
+      <h3>Payment</h3>
+      {% if payment %}
+      <dl class="details">
+        <dt>Status</dt><dd><span class="badge badge-pay-{{ payment.status }}">{{ payment.get_status_display }}</span></dd>
+        <dt>Amount</dt><dd>&#8377;{{ payment.amount }}</dd>
+        <dt>Paid</dt><dd>&#8377;{{ payment.amount_paid }}</dd>
+        <dt>Due</dt><dd>&#8377;{{ payment.amount_due }}</dd>
+        {% if payment.method %}<dt>Method</dt><dd>{{ payment.method }}{% if payment.is_simulated %} (simulated){% endif %}</dd>{% endif %}
+        {% if payment.transaction_id %}<dt>Transaction</dt><dd>{{ payment.transaction_id }}</dd>{% endif %}
+        {% if payment.note %}<dt>Note</dt><dd>{{ payment.note }}</dd>{% endif %}
+      </dl>
+      {% if pay_options %}
+      <h4>Update payment status</h4>
+      <form method="post" action="{% url 'dashboard:payment_status' booking.reference %}" class="filters">
+        {% csrf_token %}
+        <select name="status" required>{% for value, label in pay_options %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+        <input type="text" name="note" maxlength="200" placeholder="Note (optional)">
+        <button class="btn btn-primary" type="submit">Update</button>
+      </form>
+      {% else %}<p class="muted">This payment is {{ payment.get_status_display|lower }}; its status is final.</p>{% endif %}
+      {% else %}<p class="muted">No payment record.</p>{% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}All Bookings{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="page-head"><h1>All bookings</h1>
+    <a class="btn btn-ghost" href="{% url 'dashboard:bookings_export' %}?{{ querystring }}">Export CSV</a></div>
+  {% include 'dashboard/_nav.html' %}
+  <form method="get" class="filters card">
+    <input type="search" name="q" value="{{ f.q }}" placeholder="Reference, user, email or plate">
+    <select name="status"><option value="">Any status</option>{% for v, l in statuses %}<option value="{{ v }}" {% if f.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="payment"><option value="">Any payment</option>{% for v, l in pay_statuses %}<option value="{{ v }}" {% if f.payment == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="location"><option value="">All locations</option>{% for loc in locations %}<option value="{{ loc.pk }}" {% if f.location == loc.pk|stringformat:"s" %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}</select>
+    <label class="check">From <input type="date" name="date_from" value="{{ f.date_from }}"></label>
+    <label class="check">To <input type="date" name="date_to" value="{{ f.date_to }}"></label>
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-ghost" href="{% url 'dashboard:bookings' %}">Reset</a>
+  </form>
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Reference</th><th>User</th><th>Location / slot</th><th>Vehicle</th><th>From</th><th>To</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
+      <tbody>
+      {% for b in page.object_list %}
+        <tr>
+          <td><a href="{% url 'dashboard:booking_detail' b.reference %}">{{ b.reference }}</a></td>
+          <td>{{ b.user.username }}</td>
+          <td>{{ b.slot.location.name }} / {{ b.slot.slot_number }}</td>
+          <td>{{ b.vehicle.plate_number }}</td>
+          <td>{{ b.start_time|date:"d M Y, H:i" }}</td><td>{{ b.end_time|date:"d M Y, H:i" }}</td>
+          <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+          <td>{% if b.payment %}&#8377;{{ b.payment.amount }}{% endif %}</td>
+          <td>{% if b.payment %}<span class="badge badge-pay-{{ b.payment.status }}">{{ b.payment.get_status_display }}</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pager">
+    {% if page.has_previous %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.previous_page_number }}">&larr; Prev</a>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }} &middot; {{ page.paginator.count }} bookings</span>
+    {% if page.has_next %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty card"><h3>No bookings found</h3><p class="muted">Try changing or resetting the filters.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

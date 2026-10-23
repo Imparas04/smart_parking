@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="page-head"><h1>Registered users</h1></div>
+  {% include 'dashboard/_nav.html' %}
+  <form method="get" class="filters card">
+    <input type="search" name="q" value="{{ q }}" placeholder="Username, name or email">
+    <select name="role"><option value="">Any role</option><option value="user" {% if role == 'user' %}selected{% endif %}>User</option><option value="admin" {% if role == 'admin' %}selected{% endif %}>Admin</option></select>
+    <select name="state"><option value="">Active &amp; inactive</option><option value="active" {% if state == 'active' %}selected{% endif %}>Active</option><option value="inactive" {% if state == 'inactive' %}selected{% endif %}>Inactive</option></select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-ghost" href="{% url 'dashboard:users' %}">Reset</a>
+  </form>
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Bookings</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for u in page.object_list %}
+        <tr>
+          <td>{{ u.username }}{% if u.get_full_name %} <span class="muted">({{ u.get_full_name }})</span>{% endif %}</td>
+          <td>{{ u.email }}</td>
+          <td>{% if u.is_superuser %}Superuser{% else %}{{ u.profile.get_role_display }}{% endif %}</td>
+          <td><span class="badge {% if u.is_active %}badge-available{% else %}badge-unavailable{% endif %}">{% if u.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+          <td>{{ u.booking_count }}</td>
+          <td>{{ u.date_joined|date:"d M Y" }}</td>
+          <td>
+            {% if u.pk == request.user.pk %}<span class="muted">You</span>
+            {% elif u.is_superuser %}<span class="muted">Django admin</span>
+            {% else %}
+            <div class="actions">
+              <form method="post" action="{% url 'dashboard:user_active' u.pk %}">{% csrf_token %}
+                <input type="hidden" name="active" value="{% if u.is_active %}0{% else %}1{% endif %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-ghost" type="submit">{% if u.is_active %}Deactivate{% else %}Activate{% endif %}</button></form>
+              <form method="post" action="{% url 'dashboard:user_role' u.pk %}">{% csrf_token %}
+                <input type="hidden" name="role" value="{% if u.profile.role == 'admin' %}user{% else %}admin{% endif %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-ghost" type="submit" onclick="return confirm('Change role for {{ u.username|escapejs }}?');">{% if u.profile.role == 'admin' %}Make user{% else %}Make admin{% endif %}</button></form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pager">
+    {% if page.has_previous %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.previous_page_number }}">&larr; Prev</a>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-ghost" href="?{{ querystring }}&page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty card"><h3>No users found</h3><p class="muted">Try changing or resetting the filters.</p></div>
+  {% endif %}
+</section>
+{% endblock %}
