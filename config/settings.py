@@ -165,6 +165,12 @@ BOOKING_MIN_MINUTES = 30
 BOOKING_MAX_HOURS = 24
 BOOKING_MAX_ADVANCE_DAYS = 30
 BOOKING_CANCEL_CUTOFF_MINUTES = 60
+BOOKING_CHECKIN_EARLY_MINUTES = 15
+
+# Billing: charge = hourly_rate x number of billing blocks (rounded up, minimum one block)
+BILLING_BLOCK_MINUTES = 60
+# No real gateway is configured: payments are simulated and clearly labelled as such.
+PAYMENTS_SIMULATED = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

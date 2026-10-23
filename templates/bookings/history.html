@@ -10,7 +10,7 @@
   {% if page.object_list %}
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Reference</th><th>Location / slot</th><th>Vehicle</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Reference</th><th>Location / slot</th><th>Vehicle</th><th>From</th><th>To</th><th>Status</th><th>Amount</th><th>Payment</th><th></th></tr></thead>
       <tbody>
       {% for b in page.object_list %}
         <tr>
@@ -20,6 +20,8 @@
           <td>{{ b.start_time|date:"d M Y, H:i" }}</td>
           <td>{{ b.end_time|date:"d M Y, H:i" }}</td>
           <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+          <td>{% if b.payment %}&#8377;{{ b.payment.amount }}{% endif %}</td>
+          <td>{% if b.payment %}<span class="badge badge-pay-{{ b.payment.status }}">{{ b.payment.get_status_display }}</span>{% endif %}</td>
           <td><a class="btn btn-ghost" href="{{ b.get_absolute_url }}">View</a></td>
         </tr>
       {% endfor %}

@@ -57,7 +57,15 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
 - Slots marked `unavailable` or in inactive locations cannot be booked. `occupied` slots can still be booked for a later time.
 - Locations, slots, vehicles and users that have bookings cannot be deleted (use inactive/unavailable instead).
 - API (login required; token or session): `POST/GET /api/bookings/` (`?status=&slot=&location=`), `GET /api/bookings/<reference>/`, `POST /api/bookings/<reference>/cancel/`, `GET/POST/DELETE /api/bookings/vehicles/`. Admins can read all bookings.
-- Pricing, payment status and check-in/out arrive in Phase 5.
+
+## Pricing, payments, check-in/out
+
+- **Pricing** (`apps/payments/pricing.py`, always computed on the server): hourly rate x hours, rounded up, minimum 1 hour (`BILLING_BLOCK_MINUTES` in settings). The rate is snapshotted on the booking, so later rate changes do not alter existing bookings. Leaving early does not reduce the charge; staying past the end time is billed for the actual time at check-out.
+- **Fee check**: the booking form shows a live estimate from `GET /api/payments/estimate/?slot=&start_time=&end_time=`.
+- **Payments are SIMULATED.** No payment gateway is configured and no real money moves; the pay page says so. Statuses: pending, paid, failed, refunded, cancelled. The "payment fails" option exists to test the failure path. Cancelling a paid booking records a simulated refund; cancelling an unpaid one cancels the payment. With `PAYMENTS_SIMULATED = False` the pay endpoint refuses until a real gateway is integrated.
+- **Check-in / check-out**: check-in opens 15 minutes before the start and until the end time, marks the slot occupied; check-out completes the booking and frees the slot. An overstay on an already-paid booking leaves a balance due. Check-out is never blocked by an unpaid balance.
+- **No-shows**: run `python manage.py expire_bookings` periodically (cron). Confirmed bookings that ended unused become `no_show` and are not charged.
+- **API**: `GET /api/payments/` (`?status=&booking=`), `GET /api/payments/<id>/`, `POST /api/payments/<id>/pay/` `{method: card|upi|wallet, outcome: success|fail}` (a simulated failure still returns 200; check `status`), `PATCH /api/payments/<id>/status/` (admin: `{status, note}`; allowed: pending->paid/failed/cancelled, failed->pending/paid/cancelled, paid->refunded), `POST /api/bookings/<reference>/check-in/` and `/check-out/` (owner or admin).
 
 ## Tests
 
@@ -67,4 +75,4 @@ python manage.py test
 
 ## Status
 
-Phases 1-4 (foundation, authentication, locations and slots, bookings) complete. See the phase roadmap for upcoming work.
+Phases 1-5 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in) complete. See the phase roadmap for upcoming work.

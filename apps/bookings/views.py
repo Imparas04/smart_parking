@@ -39,7 +39,7 @@ def book_slot(request, slot_pk):
 
 @login_required
 def history(request):
-    qs = request.user.bookings.select_related('slot__location', 'vehicle')
+    qs = request.user.bookings.select_related('slot__location', 'vehicle', 'payment')
     status = request.GET.get('status', '')
     if status in dict(Booking.STATUS_CHOICES):
         qs = qs.filter(status=status)
@@ -51,9 +51,10 @@ def history(request):
 @login_required
 def detail(request, reference):
     booking = get_object_or_404(
-        Booking.objects.select_related('slot__location', 'vehicle'), reference=reference, user=request.user)
+        Booking.objects.select_related('slot__location', 'vehicle', 'payment'), reference=reference, user=request.user)
     return render(request, 'bookings/detail.html', {
-        'booking': booking, 'cancel_reason': booking.cancel_block_reason()})
+        'booking': booking, 'cancel_reason': booking.cancel_block_reason(),
+        'check_in_reason': booking.check_in_block_reason()})
 
 
 @login_required
@@ -67,3 +68,26 @@ def cancel(request, reference):
     else:
         messages.success(request, 'Booking cancelled.')
     return redirect(booking)
+
+
+def _run(request, reference, action, ok_message):
+    booking = get_object_or_404(Booking, reference=reference, user=request.user)
+    try:
+        action(booking)
+    except ValidationError as exc:
+        messages.error(request, ' '.join(exc.messages))
+    else:
+        messages.success(request, ok_message)
+    return redirect(booking)
+
+
+@login_required
+@require_POST
+def check_in(request, reference):
+    return _run(request, reference, services.check_in, 'Checked in. Your slot is now marked occupied.')
+
+
+@login_required
+@require_POST
+def check_out(request, reference):
+    return _run(request, reference, services.check_out, 'Checked out. Your booking is complete.')

@@ -40,7 +40,7 @@ class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     serializer_class = BookingSerializer
 
     def get_queryset(self):
-        qs = Booking.objects.select_related('slot__location', 'vehicle')
+        qs = Booking.objects.select_related('slot__location', 'vehicle', 'payment')
         if not is_admin(self.request.user):
             qs = qs.filter(user=self.request.user)
         p = self.request.query_params
@@ -79,3 +79,23 @@ class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
         except DjangoValidationError as exc:
             _raise(exc)
         return Response(BookingSerializer(booking).data)
+
+    def _transition(self, request, func):
+        booking = self.get_object()
+        if booking.user_id != request.user.id and not is_admin(request.user):
+            raise PermissionDenied('Not allowed.')
+        try:
+            booking = func(booking)
+        except DjangoValidationError as exc:
+            _raise(exc)
+        return Response(BookingSerializer(Booking.objects.select_related('slot__location', 'vehicle', 'payment').get(pk=booking.pk)).data)
+
+    @action(detail=True, methods=['post'], url_path='check-in')
+    def check_in(self, request, reference=None):
+        """Owner or admin (parking attendant)."""
+        return self._transition(request, services.check_in)
+
+    @action(detail=True, methods=['post'], url_path='check-out')
+    def check_out(self, request, reference=None):
+        """Owner or admin (parking attendant)."""
+        return self._transition(request, services.check_out)

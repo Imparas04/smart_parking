@@ -17,6 +17,32 @@
     {% include 'accounts/_form_fields.html' %}
     <button class="btn btn-primary btn-block" type="submit">Confirm booking</button>
   </form>
-  <p class="muted">Final charges are calculated from the booked duration and the hourly rate.</p>
+  <p id="estimate" class="estimate" hidden></p>
+  <p class="muted">Charges are calculated on the server from the booked duration (rounded up to whole hours, minimum 1 hour). Payment is simulated.</p>
 </section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  var start = document.getElementById('id_start_time'), end = document.getElementById('id_end_time');
+  var box = document.getElementById('estimate'), timer;
+  if (!start || !end || !box) return;
+  function update() {
+    if (!start.value || !end.value) { box.hidden = true; return; }
+    var q = new URLSearchParams({slot: '{{ slot.pk }}', start_time: start.value, end_time: end.value});
+    fetch('{% url "api-payment-estimate" %}?' + q.toString())
+      .then(function (r) { return r.json().then(function (d) { return {ok: r.ok, d: d}; }); })
+      .then(function (res) {
+        box.hidden = false;
+        box.textContent = res.ok
+          ? 'Estimated charge: \u20B9' + res.d.amount + ' (' + res.d.billing_blocks + ' hour(s) at \u20B9' + res.d.hourly_rate + '/hour)'
+          : 'Enter a valid time range to see the estimated charge.';
+      })
+      .catch(function () { box.hidden = true; });
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(update, 300); }
+  start.addEventListener('change', schedule); end.addEventListener('change', schedule);
+  update();
+})();
+</script>
 {% endblock %}

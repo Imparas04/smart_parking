@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.payments.serializers import PaymentSerializer
+
 from .models import Booking, Vehicle, normalize_plate, plate_validator
 
 
@@ -25,12 +27,20 @@ class BookingSerializer(serializers.ModelSerializer):
     location_name = serializers.CharField(source='slot.location.name', read_only=True)
     vehicle = VehicleSerializer(read_only=True)
     can_cancel = serializers.BooleanField(read_only=True)
+    can_check_in = serializers.BooleanField(read_only=True)
+    can_check_out = serializers.BooleanField(read_only=True)
+    payment = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = ['reference', 'slot', 'slot_number', 'location_id', 'location_name', 'vehicle',
-                  'start_time', 'end_time', 'status', 'can_cancel', 'cancelled_at', 'created_at']
+                  'start_time', 'end_time', 'hourly_rate', 'status', 'can_cancel', 'can_check_in',
+                  'can_check_out', 'checked_in_at', 'checked_out_at', 'cancelled_at', 'payment', 'created_at']
         read_only_fields = fields
+
+    def get_payment(self, obj):
+        payment = getattr(obj, 'payment', None)
+        return PaymentSerializer(payment).data if payment else None
 
 
 class BookingCreateSerializer(serializers.Serializer):

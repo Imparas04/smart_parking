@@ -12,8 +12,41 @@
     <dt>From</dt><dd>{{ booking.start_time|date:"D, d M Y, H:i" }}</dd>
     <dt>To</dt><dd>{{ booking.end_time|date:"D, d M Y, H:i" }}</dd>
     <dt>Rate</dt><dd>&#8377;{{ booking.slot.location.hourly_rate }} per hour</dd>
+    {% if booking.checked_in_at %}<dt>Checked in</dt><dd>{{ booking.checked_in_at|date:"d M Y, H:i" }}</dd>{% endif %}
+    {% if booking.checked_out_at %}<dt>Checked out</dt><dd>{{ booking.checked_out_at|date:"d M Y, H:i" }}</dd>{% endif %}
     {% if booking.cancelled_at %}<dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"d M Y, H:i" }}</dd>{% endif %}
   </dl>
+
+  {% if booking.payment %}
+  <div class="charges">
+    <h3>Charges</h3>
+    <dl class="details">
+      <dt>{% if booking.status == 'completed' %}Final amount{% else %}Estimated{% endif %}</dt><dd><strong>&#8377;{{ booking.payment.amount }}</strong></dd>
+      <dt>Paid</dt><dd>&#8377;{{ booking.payment.amount_paid }}</dd>
+      <dt>Payment</dt><dd><span class="badge badge-pay-{{ booking.payment.status }}">{{ booking.payment.get_status_display }}</span>
+        {% if booking.payment.transaction_id %}<span class="muted">{{ booking.payment.transaction_id }}</span>{% endif %}</dd>
+      {% if booking.payment.can_pay and booking.status != 'cancelled' and booking.status != 'no_show' %}
+      <dt>Amount due</dt><dd>&#8377;{{ booking.payment.amount_due }}</dd>
+      {% endif %}
+    </dl>
+    <p class="muted small">Billed per hour (rounded up, minimum 1 hour). Leaving early does not reduce the charge; staying past the end time is billed extra.</p>
+    {% if booking.payment.can_pay and booking.status != 'cancelled' and booking.status != 'no_show' %}
+      <a class="btn btn-primary" href="{% url 'payments:pay' booking.reference %}">Pay now (simulated)</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="actions stack-top">
+  {% if booking.status == 'confirmed' %}
+    {% if not check_in_reason %}
+      <form method="post" action="{% url 'bookings:check_in' booking.reference %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Check in</button></form>
+    {% endif %}
+  {% elif booking.status == 'checked_in' %}
+    <form method="post" action="{% url 'bookings:check_out' booking.reference %}" onsubmit="return confirm('Check out and complete this booking?');">{% csrf_token %}<button class="btn btn-primary" type="submit">Check out</button></form>
+  {% endif %}
+  </div>
+  {% if booking.status == 'confirmed' and check_in_reason %}<p class="muted">{{ check_in_reason }}</p>{% endif %}
+
   {% if booking.status == 'confirmed' %}
     {% if cancel_reason %}
       <p class="muted">{{ cancel_reason }}</p>

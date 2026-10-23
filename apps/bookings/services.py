@@ -7,6 +7,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.parking.models import ParkingSlot
+from apps.payments import services as payment_services
+from apps.payments.pricing import calculate_charge
 
 from .models import PLATE_RE, Booking, Vehicle, normalize_plate
 
@@ -90,7 +92,10 @@ def create_booking(user, slot_id, start, end, vehicle=None, plate_number='', veh
             raise ValidationError('This slot is already booked for part of that time. Choose another time or slot.')
         if overlapping(Booking.objects.filter(vehicle=veh), start, end).exists():
             raise ValidationError('This vehicle already has a booking during that time.')
-        return Booking.objects.create(user=user, slot=slot, vehicle=veh, start_time=start, end_time=end)
+        booking = Booking.objects.create(user=user, slot=slot, vehicle=veh, start_time=start, end_time=end,
+                                         hourly_rate=slot.location.hourly_rate)
+        payment_services.create_for_booking(booking)
+        return booking
 
 
 def cancel_booking(booking):
@@ -102,4 +107,61 @@ def cancel_booking(booking):
         locked.status = Booking.CANCELLED
         locked.cancelled_at = timezone.now()
         locked.save(update_fields=['status', 'cancelled_at', 'updated_at'])
+        payment_services.on_booking_cancelled(locked)
         return locked
+
+
+def check_in(booking):
+    with transaction.atomic():
+        slot = ParkingSlot.objects.select_for_update().get(pk=booking.slot_id)
+        locked = Booking.objects.select_for_update().get(pk=booking.pk)
+        reason = locked.check_in_block_reason()
+        if reason:
+            raise ValidationError(reason)
+        if slot.status == ParkingSlot.STATUS_UNAVAILABLE:
+            raise ValidationError('This slot is currently unavailable. Please contact the parking staff.')
+        if Booking.objects.filter(slot=slot, status=Booking.CHECKED_IN).exclude(pk=locked.pk).exists():
+            raise ValidationError('The previous vehicle has not left this slot yet. Please wait or contact the staff.')
+        locked.status = Booking.CHECKED_IN
+        locked.checked_in_at = timezone.now()
+        locked.save(update_fields=['status', 'checked_in_at', 'updated_at'])
+        slot.status = ParkingSlot.STATUS_OCCUPIED
+        slot.save(update_fields=['status', 'updated_at'])
+        return locked
+
+
+def check_out(booking):
+    """Complete the booking. Charge = booked period, or the actual period if the vehicle overstays.
+    Leaving early does not reduce the charge."""
+    with transaction.atomic():
+        slot = ParkingSlot.objects.select_for_update().get(pk=booking.slot_id)
+        locked = Booking.objects.select_for_update().get(pk=booking.pk)
+        reason = locked.check_out_block_reason()
+        if reason:
+            raise ValidationError(reason)
+        now = timezone.now()
+        locked.status = Booking.COMPLETED
+        locked.checked_out_at = now
+        locked.save(update_fields=['status', 'checked_out_at', 'updated_at'])
+        if slot.status == ParkingSlot.STATUS_OCCUPIED:
+            slot.status = ParkingSlot.STATUS_AVAILABLE
+            slot.save(update_fields=['status', 'updated_at'])
+        final = calculate_charge(locked.hourly_rate, locked.start_time, max(locked.end_time, now))
+        payment_services.apply_final_amount(locked, final)
+        return locked
+
+
+def mark_no_shows(now=None):
+    """Confirmed bookings whose period has ended without a check-in become no-shows (not charged)."""
+    now = now or timezone.now()
+    count = 0
+    for b in Booking.objects.filter(status=Booking.CONFIRMED, end_time__lt=now):
+        with transaction.atomic():
+            locked = Booking.objects.select_for_update().get(pk=b.pk)
+            if locked.status != Booking.CONFIRMED:
+                continue
+            locked.status = Booking.NO_SHOW
+            locked.save(update_fields=['status', 'updated_at'])
+            payment_services.on_booking_no_show(locked)
+            count += 1
+    return count

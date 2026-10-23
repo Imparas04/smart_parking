@@ -42,9 +42,10 @@ class Booking(models.Model):
     CHECKED_IN = 'checked_in'
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
+    NO_SHOW = 'no_show'
     STATUS_CHOICES = [
         (CONFIRMED, 'Confirmed'), (CHECKED_IN, 'Checked in'),
-        (COMPLETED, 'Completed'), (CANCELLED, 'Cancelled'),
+        (COMPLETED, 'Completed'), (CANCELLED, 'Cancelled'), (NO_SHOW, 'No show'),
     ]
     ACTIVE_STATUSES = (CONFIRMED, CHECKED_IN)  # these block a slot's time window
 
@@ -55,6 +56,10 @@ class Booking(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=CONFIRMED)
+    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=0,
+                                      help_text='Rate snapshot taken when the booking was made.')
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    checked_out_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -93,6 +98,30 @@ class Booking(models.Model):
         if self.start_time - now < cutoff:
             return f'Bookings can only be cancelled at least {settings.BOOKING_CANCEL_CUTOFF_MINUTES} minutes before the start time.'
         return None
+
+    def check_in_block_reason(self, now=None):
+        now = now or timezone.now()
+        if self.status != self.CONFIRMED:
+            return f'Only confirmed bookings can be checked in (this one is {self.get_status_display().lower()}).'
+        opens = self.start_time - timedelta(minutes=settings.BOOKING_CHECKIN_EARLY_MINUTES)
+        if now < opens:
+            return f'Check-in opens {settings.BOOKING_CHECKIN_EARLY_MINUTES} minutes before the start time.'
+        if now > self.end_time:
+            return 'This booking has already ended.'
+        return None
+
+    def check_out_block_reason(self):
+        if self.status != self.CHECKED_IN:
+            return f'Only checked-in bookings can be checked out (this one is {self.get_status_display().lower()}).'
+        return None
+
+    @property
+    def can_check_in(self):
+        return self.check_in_block_reason() is None
+
+    @property
+    def can_check_out(self):
+        return self.check_out_block_reason() is None
 
     @property
     def can_cancel(self):
