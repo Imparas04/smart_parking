@@ -24,7 +24,7 @@
       <h4>Update booking status</h4>
       <div class="actions">
         {% for value, label in actions %}
-        <form method="post" action="{% url 'dashboard:booking_status' booking.reference %}" onsubmit="return confirm('{{ label }}?');">
+        <form method="post" action="{% url 'dashboard:booking_status' booking.reference %}" data-confirm="{{ label }}?">
           {% csrf_token %}<input type="hidden" name="status" value="{{ value }}">
           <button class="btn {% if value == 'cancelled' %}btn-danger{% else %}btn-ghost{% endif %}" type="submit">{{ label }}</button>
         </form>

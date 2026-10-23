@@ -4,14 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='32' y='46' font-size='40' font-weight='700' text-anchor='middle' fill='white' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
   <title>{% block title %}{{ SITE_NAME }}{% endblock %} | {{ SITE_NAME }}</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to main content</a>
   {% include 'partials/navbar.html' %}
   {% include 'partials/messages.html' %}
-  <main class="container">
+  <main id="main" class="container" tabindex="-1">
     {% block content %}{% endblock %}
   </main>
   {% include 'partials/footer.html' %}

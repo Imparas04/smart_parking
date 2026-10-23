@@ -1,7 +1,10 @@
 {% if messages %}
-<div class="container messages">
+<div class="container messages" role="status" aria-live="polite">
   {% for message in messages %}
-  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  <div class="alert alert-{{ message.tags }}"{% if message.level >= 40 %} role="alert"{% endif %}>
+    <span>{{ message }}</span>
+    <button type="button" class="alert-close" aria-label="Dismiss message">&times;</button>
+  </div>
   {% endfor %}
 </div>
 {% endif %}

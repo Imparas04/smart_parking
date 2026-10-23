@@ -4,6 +4,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from apps.accounts.permissions import is_admin
 from apps.core.exceptions import Conflict
+from apps.core.utils import clean_search, query_id
 
 from .models import ParkingLocation, ParkingSlot
 from .serializers import LocationSerializer, SlotSerializer
@@ -35,9 +36,9 @@ class LocationViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             qs = qs.filter(is_active=True)
         p = self.request.query_params
         if p.get('city'):
-            qs = qs.filter(city__iexact=p['city'])
+            qs = qs.filter(city__iexact=clean_search(p['city'], 80))
         if p.get('search'):
-            s = p['search']
+            s = clean_search(p['search'])
             qs = qs.filter(Q(name__icontains=s) | Q(address__icontains=s) | Q(city__icontains=s))
         if p.get('available') in ('1', 'true'):
             qs = qs.filter(available_slots__gt=0)
@@ -53,7 +54,10 @@ class SlotViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         if not is_admin(self.request.user):
             qs = qs.filter(location__is_active=True)
         p = self.request.query_params
-        for field in ('location', 'status', 'slot_type'):
+        location = query_id(p, 'location')
+        if location:
+            qs = qs.filter(location_id=location)
+        for field in ('status', 'slot_type'):
             if p.get(field):
-                qs = qs.filter(**{field: p[field]})
+                qs = qs.filter(**{field: p[field][:20]})
         return qs

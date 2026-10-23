@@ -5,12 +5,28 @@ from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
+from . import throttling
 from .forms import ProfileForm, RegisterForm
 
 
 class UserLoginView(LoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
+
+    def post(self, request, *args, **kwargs):
+        if throttling.is_blocked(request, request.POST.get('username', '')):
+            form = self.get_form()
+            form.add_error(None, throttling.lockout_message())
+            return self.render_to_response(self.get_context_data(form=form), status=429)
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        throttling.record_failure(self.request, self.request.POST.get('username', ''))
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        throttling.reset(self.request, self.request.POST.get('username', ''))
+        return super().form_valid(form)
 
 
 class UserPasswordChangeView(PasswordChangeView):

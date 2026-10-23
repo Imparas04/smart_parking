@@ -11,22 +11,44 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+
+from .env import load_env_file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_env_file(BASE_DIR / '.env')  # optional; real environment variables take precedence
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+
+def env_bool(name, default):
+    return os.environ.get(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def env_list(name, default=''):
+    """Comma-separated setting; whitespace around items is ignored ("a.com, b.com")."""
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
+# Number of reverse proxies in front of the app (0 = none). Used to find the real client IP safely.
+TRUSTED_PROXY_COUNT = int(os.environ.get('DJANGO_TRUSTED_PROXY_COUNT', '0'))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-insecure-key-change-me')
+DEV_SECRET_KEY = 'dev-only-insecure-key-change-me'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', DEV_SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h]
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 
 # Application definition
@@ -50,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'apps.core.middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -152,6 +175,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_RATES': {'auth': os.environ.get('DJANGO_AUTH_THROTTLE', '20/min')},
+    'NUM_PROXIES': TRUSTED_PROXY_COUNT,  # 0 = ignore X-Forwarded-For (cannot be spoofed to dodge throttles)
 }
 
 LOGIN_URL = 'accounts:login'
@@ -159,6 +184,7 @@ LOGIN_REDIRECT_URL = 'core:home'
 LOGOUT_REDIRECT_URL = 'core:home'
 
 SITE_NAME = 'SmartPark'
+SITE_TIMEZONE_LABEL = 'India time (IST)'
 
 # Booking rules
 BOOKING_MIN_MINUTES = 30
@@ -176,3 +202,55 @@ PAYMENTS_SIMULATED = True
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'same-origin'
+CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS', '')
+
+# Content-Security-Policy: scripts only from this site (no inline scripts). Inline styles are still
+# allowed. Set DJANGO_CSP_REPORT_ONLY=True to observe violations without blocking.
+CSP_POLICY = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+              "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; "
+              "form-action 'self'; frame-ancestors 'none'")
+CSP_REPORT_ONLY = env_bool('DJANGO_CSP_REPORT_ONLY', False)
+PERMISSIONS_POLICY = 'geolocation=(), camera=(), microphone=(), payment=()'
+
+# Login brute-force protection (per client IP + username, and per client IP overall)
+LOGIN_MAX_FAILURES_PER_USER = 5
+LOGIN_MAX_FAILURES_PER_IP = 20
+LOGIN_LOCKOUT_SECONDS = 15 * 60
+
+# Cache used for throttling. Local-memory is per process: with several workers/servers use a shared
+# cache (Redis, Memcached or the database cache) so limits apply across all of them.
+CACHES = {
+    'default': {
+        'BACKEND': ('django.core.cache.backends.dummy.DummyCache' if TESTING
+                    else 'django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': 'smartpark',
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'loggers': {'apps.security': {'handlers': ['console'], 'level': 'CRITICAL' if TESTING else 'INFO', 'propagate': False}},
+}
+
+if not DEBUG and not TESTING:
+    if SECRET_KEY == DEV_SECRET_KEY or len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured(
+            'Set DJANGO_SECRET_KEY to a long random value (50+ characters) when DJANGO_DEBUG is False. '
+            'Generate one with: python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"')
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SSL_REDIRECT', True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '3600'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_HSTS_INCLUDE_SUBDOMAINS', False)
+    if env_bool('DJANGO_BEHIND_PROXY', False):
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

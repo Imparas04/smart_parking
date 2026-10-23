@@ -24,7 +24,7 @@
     <span><i class="dot slot-occupied"></i> Occupied ({{ occupied }})</span>
     <span><i class="dot slot-unavailable"></i> Unavailable ({{ unavailable }})</span>
     <form method="get" class="inline-form">
-      <select name="slot_type" onchange="this.form.submit()">
+      <select name="slot_type" data-autosubmit aria-label="Filter by slot type">
         <option value="">All types</option>
         {% for value, label in slot_types %}<option value="{{ value }}" {% if value == slot_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>

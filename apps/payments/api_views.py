@@ -26,7 +26,7 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         if p.get('status') in dict(Payment.STATUS_CHOICES):
             qs = qs.filter(status=p['status'])
         if p.get('booking'):
-            qs = qs.filter(booking__reference=p['booking'])
+            qs = qs.filter(booking__reference=p['booking'][:20])
         return qs
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny], authentication_classes=[])

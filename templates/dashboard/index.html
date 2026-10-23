@@ -7,7 +7,7 @@
     <h1>Admin dashboard</h1>
     <form method="get" class="inline-form">
       <label class="muted small" for="days">Daily charts:</label>
-      <select id="days" name="days" onchange="this.form.submit()">
+      <select id="days" name="days" data-autosubmit>
         {% for d in day_options %}<option value="{{ d }}" {% if d == days %}selected{% endif %}>Last {{ d }} days</option>{% endfor %}
       </select>
     </form>

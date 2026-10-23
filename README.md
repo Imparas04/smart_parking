@@ -9,7 +9,7 @@ Stack: Python, Django, Django REST Framework, Django Templates, HTML/CSS/JavaScr
 python -m venv venv
 # Windows: venv\Scripts\activate    |  macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # optional; defaults work for local development
+cp .env.example .env        # optional; loaded automatically. Defaults work for local development
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
@@ -76,6 +76,22 @@ SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` valu
 - Locations and slots are managed from `/parking/` (admin buttons), linked from the dashboard.
 - API (admin only): `GET /api/dashboard/summary/?days=14` (money as strings, `charts` arrays numeric), `PATCH /api/bookings/<reference>/status/` `{status}`.
 
+## Configuration and security
+
+Settings come from environment variables or a `.env` file in the project root (see `.env.example`). Real environment variables win over `.env`.
+
+**Deploying:** set `DJANGO_DEBUG=False`, a random `DJANGO_SECRET_KEY` (50+ characters; the app refuses to start with the development key when debug is off), `DJANGO_ALLOWED_HOSTS`, and, behind a reverse proxy, `DJANGO_BEHIND_PROXY=True` and `DJANGO_TRUSTED_PROXY_COUNT`. In that mode HTTPS redirect, secure cookies and HSTS are switched on. Verify with `python manage.py check --deploy`; the two remaining notices (HSTS include-subdomains and preload) are deliberate opt-ins. `DEBUG` defaults to `True` for local development, so it must be turned off explicitly in production.
+
+What is in place:
+
+- **CSRF** protection on every form and on session-authenticated API calls (token-authenticated API calls do not need it). A friendly page is shown if a token is missing or expired.
+- **Ownership checks:** users can only see and change their own bookings, payments and vehicles (web and API); other people's items return 404. Admin pages and APIs need the admin role, which is checked on every request, so role changes and deactivation take effect immediately (existing sessions and API tokens of a deactivated user stop working). The admin role does not grant access to Django's own `/admin/` site (that needs `is_staff`).
+- **Login brute-force protection:** after 5 failed attempts for a username from one IP (or 20 from one IP) logins are refused for 15 minutes, on the website and the API (HTTP 429). API login and registration are also rate limited (`DJANGO_AUTH_THROTTLE`). `X-Forwarded-For` is ignored unless you declare trusted proxies, so it cannot be spoofed. Failed logins are logged (never the password). The counters live in the cache; the default in-process cache is per worker, so with several workers or servers configure a shared cache (Redis, Memcached or the database cache).
+- **Content-Security-Policy:** scripts load only from this site and no page uses inline scripts or handlers (set `DJANGO_CSP_REPORT_ONLY=True` to observe instead of block). Also `X-Frame-Options: DENY`, `nosniff`, a strict referrer policy and a permissions policy. Django's own `/admin/` is excluded from the CSP.
+- **Input handling:** malformed ids, dates and search text in query strings or forms produce clean 400/200 responses rather than server errors; search text is length-limited. Server-side validation covers all booking, payment and admin rules.
+
+Known limitations: API tokens do not expire (logging out via the API revokes them); there is no password-reset or email-verification flow; registration reveals whether a username or email is already taken.
+
 ## Tests
 
 ```bash
@@ -84,4 +100,4 @@ python manage.py test
 
 ## Status
 
-Phases 1-6 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in, admin dashboard) complete. See the phase roadmap for upcoming work.
+Phases 1-7 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in, admin dashboard, UI polish and security) complete. See the phase roadmap for upcoming work.

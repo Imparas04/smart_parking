@@ -34,7 +34,7 @@
                 <button class="btn btn-ghost" type="submit">{% if u.is_active %}Deactivate{% else %}Activate{% endif %}</button></form>
               <form method="post" action="{% url 'dashboard:user_role' u.pk %}">{% csrf_token %}
                 <input type="hidden" name="role" value="{% if u.profile.role == 'admin' %}user{% else %}admin{% endif %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
-                <button class="btn btn-ghost" type="submit" onclick="return confirm('Change role for {{ u.username|escapejs }}?');">{% if u.profile.role == 'admin' %}Make user{% else %}Make admin{% endif %}</button></form>
+                <button class="btn btn-ghost" type="submit" data-confirm="Change role for {{ u.username }}?">{% if u.profile.role == 'admin' %}Make user{% else %}Make admin{% endif %}</button></form>
             </div>
             {% endif %}
           </td>

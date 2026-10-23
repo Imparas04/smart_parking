@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.accounts.permissions import IsAdminRole, is_admin
 from apps.core.exceptions import Conflict
+from apps.core.utils import query_id
 
 from . import services
 from .models import Booking, Vehicle
@@ -47,10 +48,11 @@ class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
         p = self.request.query_params
         if p.get('status') in dict(Booking.STATUS_CHOICES):
             qs = qs.filter(status=p['status'])
-        if p.get('slot'):
-            qs = qs.filter(slot_id=p['slot'])
-        if p.get('location'):
-            qs = qs.filter(slot__location_id=p['location'])
+        slot, location = query_id(p, 'slot'), query_id(p, 'location')
+        if slot:
+            qs = qs.filter(slot_id=slot)
+        if location:
+            qs = qs.filter(slot__location_id=location)
         return qs
 
     def create(self, request, *args, **kwargs):

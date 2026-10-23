@@ -5,20 +5,26 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.bookings.models import Booking, normalize_plate
+from apps.core.utils import clean_search, parse_id
 from apps.payments.models import Payment
 
 
 def _bound(value, add_days=0):
-    day = parse_date(value or '')
-    if not day:
+    """Start of the given day (+ add_days) as an aware datetime, or None if it is not a sane date."""
+    try:
+        day = parse_date(value or '')  # raises ValueError for well-formed but impossible dates
+        if not day or not 2000 <= day.year <= 2100:
+            return None
+        return timezone.make_aware(datetime.combine(day + timedelta(days=add_days), time.min))
+    except (ValueError, OverflowError):
         return None
-    return timezone.make_aware(datetime.combine(day + timedelta(days=add_days), time.min))
 
 
 def filter_bookings(params):
     """Return (queryset, cleaned filter values) for the admin bookings list and export."""
     qs = Booking.objects.select_related('user', 'slot__location', 'vehicle', 'payment').order_by('-created_at')
-    f = {k: (params.get(k) or '').strip() for k in ('q', 'status', 'payment', 'location', 'date_from', 'date_to')}
+    f = {k: (params.get(k) or '').strip()[:50] for k in ('status', 'payment', 'location', 'date_from', 'date_to')}
+    f['q'] = clean_search(params.get('q'))
     if f['q']:
         q = f['q']
         qs = qs.filter(Q(reference__icontains=q) | Q(user__username__icontains=q) | Q(user__email__icontains=q)
@@ -31,8 +37,10 @@ def filter_bookings(params):
         qs = qs.filter(payment__status=f['payment'])
     else:
         f['payment'] = ''
-    if f['location'].isdigit():
-        qs = qs.filter(slot__location_id=int(f['location']))
+    location_id = parse_id(f['location'])
+    if location_id:
+        qs = qs.filter(slot__location_id=location_id)
+        f['location'] = str(location_id)
     else:
         f['location'] = ''
     start, end = _bound(f['date_from']), _bound(f['date_to'], add_days=1)

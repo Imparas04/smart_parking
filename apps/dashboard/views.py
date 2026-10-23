@@ -15,6 +15,7 @@ from apps.accounts.decorators import admin_required
 from apps.accounts.models import Profile
 from apps.bookings import services as booking_services
 from apps.bookings.models import Booking
+from apps.core.utils import clean_search
 from apps.parking.models import ParkingLocation
 from apps.payments import services as payment_services
 from apps.payments.models import Payment
@@ -122,7 +123,7 @@ def payment_status(request, reference):
 @admin_required
 def users(request):
     qs = User.objects.select_related('profile').annotate(booking_count=Count('bookings')).order_by('-date_joined')
-    q = request.GET.get('q', '').strip()
+    q = clean_search(request.GET.get('q'))
     role = request.GET.get('role', '')
     state = request.GET.get('state', '')
     if q:

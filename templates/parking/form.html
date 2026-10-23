@@ -7,7 +7,7 @@
     {% csrf_token %}
     {% include 'accounts/_form_fields.html' %}
     <button class="btn btn-primary" type="submit">Save</button>
-    <a class="btn btn-ghost" href="javascript:history.back()">Cancel</a>
+    <a class="btn btn-ghost" href="{{ cancel_url|default:'/parking/' }}">Cancel</a>
   </form>
 </section>
 {% endblock %}

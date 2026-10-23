@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, ProtectedError, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from apps.accounts.decorators import admin_required
 from apps.accounts.permissions import is_admin
+from apps.core.utils import clean_search
 
 from .forms import BulkSlotForm, LocationForm, SlotForm
 from .models import ParkingLocation, ParkingSlot
@@ -20,9 +22,9 @@ def location_list(request):
         total_slots=Count('slots'),
         available_slots=Count('slots', filter=Q(slots__status=ParkingSlot.STATUS_AVAILABLE)),
     ).order_by('city', 'name')
-    q = request.GET.get('q', '').strip()
-    city = request.GET.get('city', '').strip()
-    slot_type = request.GET.get('slot_type', '').strip()
+    q = clean_search(request.GET.get('q'))
+    city = clean_search(request.GET.get('city'), 80)
+    slot_type = request.GET.get('slot_type', '').strip()[:20]
     only_available = request.GET.get('available') == '1'
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(address__icontains=q) | Q(city__icontains=q))
@@ -73,7 +75,8 @@ def location_create(request):
         loc = form.save()
         messages.success(request, 'Location created. Now add parking slots.')
         return redirect(loc)
-    return render(request, 'parking/form.html', {'form': form, 'title': 'Add parking location'})
+    return render(request, 'parking/form.html', {'form': form, 'title': 'Add parking location',
+                                                 'cancel_url': reverse('parking:location_list')})
 
 
 @admin_required
@@ -84,7 +87,7 @@ def location_update(request, pk):
         form.save()
         messages.success(request, 'Location updated.')
         return redirect(loc)
-    return render(request, 'parking/form.html', {'form': form, 'title': f'Edit {loc.name}'})
+    return render(request, 'parking/form.html', {'form': form, 'title': f'Edit {loc.name}', 'cancel_url': loc.get_absolute_url()})
 
 
 @admin_required
@@ -113,7 +116,7 @@ def slot_create(request, location_pk):
         slot.save()
         messages.success(request, f'Slot {slot.slot_number} added.')
         return redirect(loc)
-    return render(request, 'parking/form.html', {'form': form, 'title': f'Add slot to {loc.name}'})
+    return render(request, 'parking/form.html', {'form': form, 'title': f'Add slot to {loc.name}', 'cancel_url': loc.get_absolute_url()})
 
 
 @admin_required
@@ -124,7 +127,8 @@ def slot_bulk_create(request, location_pk):
         created = form.save()
         messages.success(request, f'{len(created)} slots added.')
         return redirect(loc)
-    return render(request, 'parking/form.html', {'form': form, 'title': f'Add multiple slots to {loc.name}'})
+    return render(request, 'parking/form.html', {'form': form, 'title': f'Add multiple slots to {loc.name}',
+                                                 'cancel_url': loc.get_absolute_url()})
 
 
 @admin_required
@@ -135,7 +139,8 @@ def slot_update(request, pk):
         form.save()
         messages.success(request, 'Slot updated.')
         return redirect(slot.location)
-    return render(request, 'parking/form.html', {'form': form, 'title': f'Edit slot {slot.slot_number}'})
+    return render(request, 'parking/form.html', {'form': form, 'title': f'Edit slot {slot.slot_number}',
+                                                 'cancel_url': slot.get_absolute_url()})
 
 
 @admin_required
