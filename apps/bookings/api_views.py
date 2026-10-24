@@ -106,7 +106,6 @@ class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     @action(detail=True, methods=['patch'], url_path='status', permission_classes=[IsAdminRole])
     def set_status(self, request, reference=None):
         """Admin: confirmed -> checked_in | cancelled | no_show, checked_in -> completed."""
-        booking = self.get_object()
         ser = BookingStatusSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         return self._transition(request, lambda b: services.admin_set_status(b, ser.validated_data['status']))

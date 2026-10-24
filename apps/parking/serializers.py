@@ -4,13 +4,23 @@ from .models import ParkingLocation, ParkingSlot
 
 
 class LocationSerializer(serializers.ModelSerializer):
-    total_slots = serializers.IntegerField(read_only=True)
-    available_slots = serializers.IntegerField(read_only=True)
+    total_slots = serializers.SerializerMethodField()
+    available_slots = serializers.SerializerMethodField()
 
     class Meta:
         model = ParkingLocation
         fields = ['id', 'name', 'address', 'city', 'description', 'opening_time', 'closing_time',
                   'hourly_rate', 'is_active', 'total_slots', 'available_slots']
+
+
+    # Lists annotate these counts (no extra queries); a freshly created/updated object computes them.
+    def get_total_slots(self, obj):
+        value = getattr(obj, 'total_slots', None)
+        return value if value is not None else obj.slots.count()
+
+    def get_available_slots(self, obj):
+        value = getattr(obj, 'available_slots', None)
+        return value if value is not None else obj.slots.filter(status=ParkingSlot.STATUS_AVAILABLE).count()
 
 
 class SlotSerializer(serializers.ModelSerializer):
@@ -19,6 +29,7 @@ class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParkingSlot
         fields = ['id', 'location', 'location_name', 'slot_number', 'slot_type', 'status', 'notes']
+        validators = []  # uniqueness is checked in validate() (after normalising the number) with a clearer message
 
     def validate_slot_number(self, value):
         return value.strip().upper()

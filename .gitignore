@@ -9,3 +9,6 @@ staticfiles/
 .idea/
 .vscode/
 *.log
+.coverage
+htmlcov/
+node_modules/

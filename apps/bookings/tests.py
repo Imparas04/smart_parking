@@ -319,3 +319,15 @@ class APITests(TestCase):
         self.assertEqual(self.client.get('/api/bookings/vehicles/').json()['count'], 1)
         self.post(self.body(at(1, 10), at(1, 11), vehicle=vid, plate_number='', vehicle_type='bike', slot=make_slot(self.slot.location, 'B1', slot_type='bike').pk))
         self.assertEqual(self.client.delete(f'/api/bookings/vehicles/{vid}/').status_code, 409)
+
+
+class VehicleNullTests(TestCase):
+    def test_null_vehicle_with_a_plate_number_is_accepted_and_null_alone_is_not(self):
+        user, slot = make_user(), make_slot()
+        self.client.force_login(user)
+        body = {'slot': slot.pk, 'start_time': at(1, 10).isoformat(), 'end_time': at(1, 12).isoformat(), 'vehicle': None}
+        r = self.client.post('/api/bookings/', {**body, 'plate_number': 'MH15AB1234', 'vehicle_type': 'car'}, content_type='application/json')
+        self.assertEqual(r.status_code, 201, r.content)
+        r = self.client.post('/api/bookings/', {**body, 'start_time': at(2, 10).isoformat(), 'end_time': at(2, 12).isoformat()},
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 400)  # no vehicle and no plate: still refused

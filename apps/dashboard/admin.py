@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# The dashboard has no models of its own; see views.py.

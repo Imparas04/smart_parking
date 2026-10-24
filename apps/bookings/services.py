@@ -1,4 +1,5 @@
 """Booking business rules. Used by both the web views and the REST API."""
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -11,8 +12,6 @@ from apps.payments import services as payment_services
 from apps.payments.pricing import calculate_charge
 
 from .models import PLATE_RE, Booking, Vehicle, normalize_plate
-
-import re
 
 # slot type -> vehicle types allowed in it
 COMPATIBLE = {

@@ -121,7 +121,13 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': os.environ.get('DJANGO_SQLITE_PATH', BASE_DIR / 'db.sqlite3'),
+            'OPTIONS': {
+                # Take the write lock when a transaction starts, so concurrent bookings/payments queue up and wait
+                # (up to `timeout` seconds) instead of failing with "database is locked" half-way through.
+                'transaction_mode': 'IMMEDIATE',
+                'timeout': 20,
+            },
         }
     }
 
@@ -234,6 +240,10 @@ CACHES = {
     }
 }
 
+if TESTING:
+    # Password hashing is deliberately slow; use a fast hasher so the test suite stays quick. Never used outside tests.
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -243,6 +253,12 @@ LOGGING = {
 }
 
 if not DEBUG and not TESTING:
+    # Serve static files from the app itself (WhiteNoise): run `collectstatic` on deploy.
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    }
     if SECRET_KEY == DEV_SECRET_KEY or len(SECRET_KEY) < 50:
         raise ImproperlyConfigured(
             'Set DJANGO_SECRET_KEY to a long random value (50+ characters) when DJANGO_DEBUG is False. '

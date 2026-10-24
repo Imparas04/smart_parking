@@ -213,3 +213,45 @@ class SeedCommandTests(TestCase):
         call_command('seed_parking', stdout=StringIO())
         self.assertEqual(ParkingLocation.objects.count(), 3)
         self.assertEqual(ParkingSlot.objects.count(), n)
+
+
+class ApiResponseShapeTests(TestCase):
+    """Every location response has the same fields, whether it comes from a list, a create or an update."""
+
+    def setUp(self):
+        self.admin = make_admin()
+        self.client.force_login(self.admin)
+
+    def test_create_and_update_responses_include_slot_counts_like_list_and_detail(self):
+        body = {'name': 'Shape Lot', 'address': 'a', 'city': 'c', 'hourly_rate': '10.00'}
+        created = self.client.post('/api/parking/locations/', body, content_type='application/json')
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual((created.json()['total_slots'], created.json()['available_slots']), (0, 0))
+        pk = created.json()['id']
+        make_slot(ParkingLocation.objects.get(pk=pk), 'S1')
+        make_slot(ParkingLocation.objects.get(pk=pk), 'S2', status='occupied')
+        updated = self.client.patch(f'/api/parking/locations/{pk}/', {'hourly_rate': '12.00'}, content_type='application/json')
+        listed = self.client.get('/api/parking/locations/').json()['results'][0]
+        detail = self.client.get(f'/api/parking/locations/{pk}/').json()
+        self.assertEqual(set(created.json()), set(updated.json()))
+        self.assertEqual(set(created.json()), set(listed))
+        self.assertEqual((updated.json()['total_slots'], updated.json()['available_slots']), (2, 1))
+        self.assertEqual((detail['total_slots'], detail['available_slots']), (2, 1))
+
+    def test_duplicate_slot_error_is_clear_and_case_insensitive(self):
+        loc = make_location()
+        make_slot(loc, 'A1')
+        for number in ('A1', 'a1', ' A1 '):
+            r = self.client.post('/api/parking/slots/', {'location': loc.pk, 'slot_number': number}, content_type='application/json')
+            self.assertEqual(r.status_code, 400, number)
+            self.assertIn('already exists', r.json()['slot_number'][0])
+        self.assertEqual(loc.slots.count(), 1)
+
+
+class ApiSurfaceTests(TestCase):
+    def test_no_undocumented_router_extras(self):
+        """The API exposes only the documented endpoints: no browsable API root, no .json suffix variants."""
+        make_location()
+        self.assertEqual(self.client.get('/api/parking/').status_code, 404)
+        self.assertEqual(self.client.get('/api/parking/locations.json').status_code, 404)
+        self.assertEqual(self.client.get('/api/parking/locations/').status_code, 200)

@@ -47,7 +47,7 @@ class BookingCreateSerializer(serializers.Serializer):
     slot = serializers.IntegerField()
     start_time = serializers.DateTimeField()
     end_time = serializers.DateTimeField()
-    vehicle = serializers.IntegerField(required=False)
+    vehicle = serializers.IntegerField(required=False, allow_null=True)  # null is treated as 'not given'
     plate_number = serializers.CharField(required=False, allow_blank=True, max_length=20)
     vehicle_type = serializers.ChoiceField(choices=Vehicle.TYPE_CHOICES, required=False, default='car')
 

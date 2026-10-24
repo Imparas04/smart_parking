@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-prod.txt
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+      - name: Generated docs are up to date
+        run: python tools/build_docs.py --check
+      - name: Production configuration check (two HSTS notices are deliberate opt-ins)
+        env:
+          DJANGO_DEBUG: 'False'
+          DJANGO_SECRET_KEY: ci-only-secret-key-not-used-anywhere-0123456789-abcdefghijklmnop
+          DJANGO_BEHIND_PROXY: 'True'
+          DJANGO_ALLOWED_HOSTS: parking.example.com
+        run: python manage.py check --deploy
+
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: pip install -r requirements.txt
+      - name: Run the Postman collection with Newman (throw-away database)
+        run: bash tools/run_postman.sh

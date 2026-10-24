@@ -381,6 +381,17 @@ class NoInlineScriptTests(TestCase):
 
 # ---------------------------------------------------------------- production settings & env loader
 
+class TestOnlySettingsStayOutOfProduction(TestCase):
+    def test_fast_password_hasher_is_only_used_by_the_test_runner(self):
+        self.assertEqual(settings.PASSWORD_HASHERS, ['django.contrib.auth.hashers.MD5PasswordHasher'])  # we are under test
+        code = "import django; django.setup(); from django.conf import settings as s; print(s.PASSWORD_HASHERS[0])"
+        base = {k: v for k, v in os.environ.items() if not k.startswith('DJANGO_')}
+        base.update({'DJANGO_SETTINGS_MODULE': 'config.settings', 'PYTHONPATH': str(PROJECT)})
+        r = subprocess.run([sys.executable, '-c', code], cwd=str(PROJECT), env=base, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('PBKDF2', r.stdout)  # normal runs keep Django's strong default hasher
+
+
 class ProductionSettingsTests(TestCase):
     def run_settings(self, **env):
         code = ("import django, json; django.setup(); from django.conf import settings as s; "

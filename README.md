@@ -1,103 +1,94 @@
-# Smart Parking Management System
+# SmartPark: Smart Parking Management System
 
-Django-based web app for finding, booking and managing parking slots.
-Stack: Python, Django, Django REST Framework, Django Templates, HTML/CSS/JavaScript.
+A web application for finding, booking and managing parking. Drivers search locations, see live slot availability, book a slot for a time range, get the fee calculated
+automatically, pay (simulated), check in and out, and review their history. Administrators manage locations, slots, users, bookings and payments, and see revenue and
+availability on a dashboard with charts. Everything is also available through a documented REST API.
 
-## Setup
+Built with **Python, Django, Django REST Framework, Django Templates, HTML, CSS and JavaScript** (Chart.js for the charts). SQLite by default; MySQL by configuration.
+No React or Node.js (Node is only needed to run the optional Postman/Newman API tests).
+
+## Quick start
 
 ```bash
 python -m venv venv
-# Windows: venv\Scripts\activate    |  macOS/Linux: source venv/bin/activate
+source venv/bin/activate              # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env        # optional; loaded automatically. Defaults work for local development
 python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
+python manage.py seed_demo            # optional: demo locations, bookings and accounts (prints the logins)
+python manage.py runserver            # http://127.0.0.1:8000
 ```
 
-Open http://127.0.0.1:8000/
+Demo accounts (only created by `seed_demo`, which refuses to run in production): **admin_demo / DemoAdmin#2026** and **user_demo / DemoUser#2026**.
+Without demo data, create your own admin with `python manage.py createsuperuser` (superusers automatically get the admin role) and add locations from the *Parking* page.
 
-## Configuration
+Configuration is optional for development: copy `.env.example` to `.env` to change anything (it is loaded automatically).
 
-Settings are read from environment variables (see `.env.example`).
-SQLite is the default database. For MySQL set `DB_ENGINE=mysql`, the `DB_*` values, and `pip install mysqlclient`.
+## Documentation
+
+| Document | What is in it |
+|---|---|
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to use the site as a driver and as an administrator, plus a 10-minute demonstration script |
+| [docs/API.md](docs/API.md) | Every REST endpoint with parameters, rules, errors and real example responses |
+| [docs/postman/](docs/postman/) | Postman collection and environment (64 requests, 109 assertions) |
+| [docs/DATABASE.md](docs/DATABASE.md) | Tables, columns, constraints and an ER diagram |
+| [docs/TESTING.md](docs/TESTING.md) | What is tested and how, results, performance sanity check, what is not covered, manual acceptance checklist |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Environment variables, production setup (gunicorn, WhiteNoise, nginx, MySQL), scheduled jobs, troubleshooting |
+| [docs/REQUIREMENTS_CHECKLIST.md](docs/REQUIREMENTS_CHECKLIST.md) | Every assignment requirement with its status, and the known limitations |
+| [CHANGELOG.md](CHANGELOG.md) | What was built in each phase |
+
+## How it works
+
+**Roles.** *Visitors* can browse. *Users* book and manage their own bookings. *Admins* (role `admin`) use the dashboard. Users only ever see their own bookings, payments and vehicles.
+
+**Booking rules.** Start in the future; 30 minutes to 24 hours long; up to 30 days ahead; inside the location's opening hours; slot free for the whole period (back-to-back is fine);
+slot not under maintenance; vehicle type fits the slot. Overlaps are checked inside a database transaction that locks the slot, so simultaneous requests cannot double-book
+(verified with a multi-threaded test).
+
+**Pricing.** `hourly rate x hours`, rounded up to whole hours, minimum one hour, always calculated on the server. The rate is saved with the booking, so later rate changes do not
+affect it. Leaving early does not reduce the charge; staying past the end is billed for the actual time.
+
+**Payments are simulated.** There is no payment gateway and no real money moves; the pay page says so and every payment is flagged `is_simulated`. Statuses: pending, paid, failed, refunded, cancelled.
+Cancelling a paid booking records a simulated refund.
+
+**Check-in and check-out.** Check-in opens 15 minutes before the start and marks the slot occupied; check-out completes the booking and frees the slot. Cancelling is allowed until 60 minutes before the start.
+Unused, finished bookings become *no-shows* (not charged) when `python manage.py expire_bookings` runs (schedule it, see [DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+The numbers above are settings in `config/settings.py`.
 
 ## Project layout
 
-- `config/` project settings and root URLs
-- `apps/core` home page and shared context
-- `apps/accounts`, `apps/parking`, `apps/bookings`, `apps/payments`, `apps/dashboard` feature apps (filled in later phases)
-- `templates/` base layout and partials, `static/` CSS and JS, `media/` uploads
-
-## Authentication and roles
-
-- Pages: `/accounts/register/`, `/accounts/login/`, `/accounts/profile/`, `/accounts/password/`; logout is a POST form.
-- Roles live on `Profile.role` (`user` or `admin`). Registration always creates `user`. Superusers are admin automatically; promote others in Django admin (Users > Profile inline).
-- Admin-only pages use `@admin_required`; APIs use `IsAdminRole`. `/dashboard/` is admin-only.
-- REST API (token auth, send header `Authorization: Token <key>`):
-  - `POST /api/auth/register/` `{username, password, first_name, last_name, email, phone}`
-  - `POST /api/auth/login/` `{username, password}`
-  - `POST /api/auth/logout/`
-  - `GET|PATCH /api/auth/profile/`
-
-## Parking locations and slots
-
-- Public pages: `/parking/` (search by name/address/city, city, slot type and "has free slots" filters), `/parking/<id>/` (colour-coded slot grid), `/parking/slots/<id>/`.
-- Admin pages (admin role only): add/edit/delete locations and slots, plus bulk slot creation, from the same pages (buttons appear for admins). Django admin also works.
-- Slot status is set by admins for now (available, occupied, unavailable). Later phases update it automatically from bookings and check-in/out.
-- Hourly rate is stored per location and used for pricing in Phase 5. Currency is shown as INR.
-- Demo data: `python manage.py seed_parking` (safe to run repeatedly).
-- API (read: anyone, write: admin role): `/api/parking/locations/` (`?search=&city=&available=1`) and `/api/parking/slots/` (`?location=&status=&slot_type=`); paginated, 20 per page.
-
-## Bookings
-
-- Pages (login required): `/bookings/` (history with status filters), `/bookings/book/<slot_id>/`, `/bookings/<reference>/` (confirmation and cancel). Users only ever see their own bookings.
-- Rules (change in `config/settings.py`): minimum 30 minutes, maximum 24 hours, up to 30 days ahead, cancellation allowed until 60 minutes before start.
-- Double-booking protection: `apps/bookings/services.py` locks the slot row (`select_for_update`) inside a transaction and rejects overlapping confirmed/checked-in bookings (back-to-back is allowed). The same vehicle cannot overlap itself. SQLite serialises writers at database level; row locking applies on MySQL/PostgreSQL.
-- Slots marked `unavailable` or in inactive locations cannot be booked. `occupied` slots can still be booked for a later time.
-- Locations, slots, vehicles and users that have bookings cannot be deleted (use inactive/unavailable instead).
-- API (login required; token or session): `POST/GET /api/bookings/` (`?status=&slot=&location=`), `GET /api/bookings/<reference>/`, `POST /api/bookings/<reference>/cancel/`, `GET/POST/DELETE /api/bookings/vehicles/`. Admins can read all bookings.
-
-## Pricing, payments, check-in/out
-
-- **Pricing** (`apps/payments/pricing.py`, always computed on the server): hourly rate x hours, rounded up, minimum 1 hour (`BILLING_BLOCK_MINUTES` in settings). The rate is snapshotted on the booking, so later rate changes do not alter existing bookings. Leaving early does not reduce the charge; staying past the end time is billed for the actual time at check-out.
-- **Fee check**: the booking form shows a live estimate from `GET /api/payments/estimate/?slot=&start_time=&end_time=`.
-- **Payments are SIMULATED.** No payment gateway is configured and no real money moves; the pay page says so. Statuses: pending, paid, failed, refunded, cancelled. The "payment fails" option exists to test the failure path. Cancelling a paid booking records a simulated refund; cancelling an unpaid one cancels the payment. With `PAYMENTS_SIMULATED = False` the pay endpoint refuses until a real gateway is integrated.
-- **Check-in / check-out**: check-in opens 15 minutes before the start and until the end time, marks the slot occupied; check-out completes the booking and frees the slot. An overstay on an already-paid booking leaves a balance due. Check-out is never blocked by an unpaid balance.
-- **No-shows**: run `python manage.py expire_bookings` periodically (cron). Confirmed bookings that ended unused become `no_show` and are not charged.
-- **API**: `GET /api/payments/` (`?status=&booking=`), `GET /api/payments/<id>/`, `POST /api/payments/<id>/pay/` `{method: card|upi|wallet, outcome: success|fail}` (a simulated failure still returns 200; check `status`), `PATCH /api/payments/<id>/status/` (admin: `{status, note}`; allowed: pending->paid/failed/cancelled, failed->pending/paid/cancelled, paid->refunded), `POST /api/bookings/<reference>/check-in/` and `/check-out/` (owner or admin).
-
-## Admin dashboard and reports (admin role only)
-
-- `/dashboard/` overview: revenue (today, selected period, all time), pending dues, bookings, slot availability, occupancy, plus Chart.js charts (slot availability, bookings by status, bookings per day, revenue per day, availability by location) and a per-location table. Choose 7/14/30/90 days for the daily charts. Chart.js 4.4.7 (MIT) is vendored in `static/js/vendor/`, so no CDN is needed.
-- Revenue = money received (paid plus part-paid balances); refunded and cancelled payments are excluded. Daily revenue is attributed to the date of the latest payment.
-- `/dashboard/bookings/`: every booking with filters (search, status, payment, location, date range) and `Export CSV` (same filters, max 10,000 rows, spreadsheet-formula safe). Booking detail lets admins update the booking status (confirmed -> checked in / cancelled / no-show, checked in -> completed; cancel skips the user cut-off, no-show only after the start time) and the payment status (see Phase 5 transitions). All changes go through the same service rules as users' actions (slot status, refunds, charges).
-- `/dashboard/users/`: search and filter users, activate/deactivate, promote/demote. You cannot change your own account or a superuser (use Django admin), so at least one admin always remains.
-- Locations and slots are managed from `/parking/` (admin buttons), linked from the dashboard.
-- API (admin only): `GET /api/dashboard/summary/?days=14` (money as strings, `charts` arrays numeric), `PATCH /api/bookings/<reference>/status/` `{status}`.
-
-## Configuration and security
-
-Settings come from environment variables or a `.env` file in the project root (see `.env.example`). Real environment variables win over `.env`.
-
-**Deploying:** set `DJANGO_DEBUG=False`, a random `DJANGO_SECRET_KEY` (50+ characters; the app refuses to start with the development key when debug is off), `DJANGO_ALLOWED_HOSTS`, and, behind a reverse proxy, `DJANGO_BEHIND_PROXY=True` and `DJANGO_TRUSTED_PROXY_COUNT`. In that mode HTTPS redirect, secure cookies and HSTS are switched on. Verify with `python manage.py check --deploy`; the two remaining notices (HSTS include-subdomains and preload) are deliberate opt-ins. `DEBUG` defaults to `True` for local development, so it must be turned off explicitly in production.
-
-What is in place:
-
-- **CSRF** protection on every form and on session-authenticated API calls (token-authenticated API calls do not need it). A friendly page is shown if a token is missing or expired.
-- **Ownership checks:** users can only see and change their own bookings, payments and vehicles (web and API); other people's items return 404. Admin pages and APIs need the admin role, which is checked on every request, so role changes and deactivation take effect immediately (existing sessions and API tokens of a deactivated user stop working). The admin role does not grant access to Django's own `/admin/` site (that needs `is_staff`).
-- **Login brute-force protection:** after 5 failed attempts for a username from one IP (or 20 from one IP) logins are refused for 15 minutes, on the website and the API (HTTP 429). API login and registration are also rate limited (`DJANGO_AUTH_THROTTLE`). `X-Forwarded-For` is ignored unless you declare trusted proxies, so it cannot be spoofed. Failed logins are logged (never the password). The counters live in the cache; the default in-process cache is per worker, so with several workers or servers configure a shared cache (Redis, Memcached or the database cache).
-- **Content-Security-Policy:** scripts load only from this site and no page uses inline scripts or handlers (set `DJANGO_CSP_REPORT_ONLY=True` to observe instead of block). Also `X-Frame-Options: DENY`, `nosniff`, a strict referrer policy and a permissions policy. Django's own `/admin/` is excluded from the CSP.
-- **Input handling:** malformed ids, dates and search text in query strings or forms produce clean 400/200 responses rather than server errors; search text is length-limited. Server-side validation covers all booking, payment and admin rules.
-
-Known limitations: API tokens do not expire (logging out via the API revokes them); there is no password-reset or email-verification flow; registration reveals whether a username or email is already taken.
+```
+config/            settings (environment based), URLs, WSGI/ASGI, .env loader
+apps/accounts/     registration, login, profiles, roles, token API, login throttling
+apps/parking/      locations and slots: pages, admin CRUD, API, demo-data commands
+apps/bookings/     vehicles and bookings: rules, services, pages, API, no-show command
+apps/payments/     pricing, simulated payments, refunds, admin payment status, API
+apps/dashboard/    admin statistics, bookings and users management, CSV export, summary API
+apps/core/         home page, security headers, shared helpers, cross-cutting tests
+templates/ static/ HTML templates; CSS and JavaScript (no inline scripts); vendored Chart.js
+docs/ tools/       documentation and the generator that keeps API/DB docs and Postman files in sync
+```
 
 ## Tests
 
 ```bash
-python manage.py test
+python manage.py test                 # the automated suite
+bash tools/run_postman.sh             # the API collection against a throw-away database (needs Node.js)
+python tools/build_docs.py --check    # generated docs are up to date
 ```
 
-## Status
+See [docs/TESTING.md](docs/TESTING.md) for coverage, the stress and edge-case tests, and what has *not* been tested (a real browser, MySQL, a live host).
 
-Phases 1-7 (foundation, authentication, locations and slots, bookings, pricing/payments/check-in, admin dashboard, UI polish and security) complete. See the phase roadmap for upcoming work.
+## Security in brief
+
+CSRF protection everywhere, ownership checks on every private resource (web and API), server-side validation, login lockout and API rate limits, Content-Security-Policy with no inline scripts,
+secure cookies/HTTPS redirect/HSTS in production, and a start-up guard that refuses the development secret key when `DJANGO_DEBUG=False`. Details and limits: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/REQUIREMENTS_CHECKLIST.md](docs/REQUIREMENTS_CHECKLIST.md).
+
+## Known limitations
+
+Payments are simulated; no password-reset or email flow; API tokens do not expire; not yet deployed to a live host, tested on MySQL, or checked in a real browser. The full list is in
+[docs/REQUIREMENTS_CHECKLIST.md](docs/REQUIREMENTS_CHECKLIST.md).
+
+## Third-party
+
+Chart.js 4.4.7 (MIT licence, `static/js/vendor/chart.js-LICENSE.md`) is included so the dashboard works without a CDN. Python dependencies are listed in `requirements.txt`
+(and `requirements-prod.txt` for production).
