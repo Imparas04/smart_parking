@@ -1,32 +1,80 @@
 {% extends 'base.html' %}
+{% load static ui %}
 {% block title %}Home{% endblock %}
-{% block content %}
+{% block content_wide %}
 <section class="hero">
-  <h1>Find and book parking in seconds</h1>
-  <p>Browse parking locations, check live slot availability, and reserve your spot online.</p>
-  <div class="hero-actions">
-    <a class="btn btn-primary" href="{% url 'parking:location_list' %}">Find Parking</a>
-    <a class="btn btn-ghost" href="#how-it-works">How it works</a>
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">{% icon 'bolt' %} Live availability &middot; instant booking</span>
+      <h1>Find and book parking <em>in seconds</em></h1>
+      <p class="lead">Search locations, see which bays are free right now, reserve the hours you need and pay online. No circling the block.</p>
+      <form class="search-hero" action="{% url 'parking:location_list' %}" method="get" role="search">
+        {% icon 'search' %}
+        <input type="search" name="q" placeholder="Search a place, area or city" aria-label="Search parking locations" maxlength="100">
+        <button class="btn btn-primary" type="submit">Find parking</button>
+      </form>
+      {% if cities %}
+      <div class="chip-row"><span class="muted small">Popular:</span>
+        {% for c in cities %}<a class="chip" href="{% url 'parking:location_list' %}?city={{ c|urlencode }}">{% icon 'pin' %}{{ c }}</a>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="hero-art"><img src="{% static 'img/hero-parking.svg' %}" alt="A parking lot seen from above with free bays highlighted" width="640" height="520"></div>
+  </div>
+  <div class="container">
+    <div class="stats-strip">
+      <div class="stat-tile"><span class="tile-icon">{% icon 'pin' 'icon-lg' %}</span><div><strong>{{ stats.locations }}</strong><span>Locations</span></div></div>
+      <div class="stat-tile"><span class="tile-icon ok">{% icon 'check' 'icon-lg' %}</span><div><strong>{{ stats.free }}</strong><span>Bays free right now</span></div></div>
+      <div class="stat-tile"><span class="tile-icon warn">{% icon 'car' 'icon-lg' %}</span><div><strong>{{ stats.total }}</strong><span>Bays in total</span></div></div>
+      <div class="stat-tile"><span class="tile-icon">{% icon 'clock' 'icon-lg' %}</span><div><strong>24/7</strong><span>Book any time</span></div></div>
+    </div>
   </div>
 </section>
 
+{% if featured %}
+<section class="section-tight">
+  <div class="container">
+    <div class="page-head"><div><h2>Popular locations</h2><p class="muted">Most free bays right now</p></div><a class="btn btn-ghost" href="{% url 'parking:location_list' %}">See all locations {% icon 'arrow' %}</a></div>
+    <div class="loc-grid">{% for loc in featured %}{% include 'parking/_location_card.html' %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+
 <section id="features" class="section">
-  <h2>Features</h2>
-  <div class="grid">
-    <article class="card"><h3>Live availability</h3><p>See available and occupied slots at every location.</p></article>
-    <article class="card"><h3>Easy booking</h3><p>Reserve a slot, get a confirmation, cancel eligible bookings.</p></article>
-    <article class="card"><h3>Transparent fees</h3><p>Charges are calculated from parking duration.</p></article>
-    <article class="card"><h3>Admin tools</h3><p>Manage locations, slots, users, bookings and revenue.</p></article>
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Why SmartPark</span><h2>Everything for stress-free parking</h2><p>Built for drivers and for the people who run the lot.</p></div>
+    <div class="feature-grid">
+      <article class="card feature"><span class="tile-icon">{% icon 'search' 'icon-lg' %}</span><h3>Live availability</h3><p>Green, red and grey bays show what is free, taken or out of service before you leave home.</p></article>
+      <article class="card feature"><span class="tile-icon ok">{% icon 'calendar' 'icon-lg' %}</span><h3>Reserve for the hours you need</h3><p>Pick a start and end time. Overlapping bookings are impossible, so your bay is yours.</p></article>
+      <article class="card feature"><span class="tile-icon warn">{% icon 'tag' 'icon-lg' %}</span><h3>Fair, upfront pricing</h3><p>See the exact fee while you choose your time. Charged per hour, rounded up, never a surprise.</p></article>
+      <article class="card feature"><span class="tile-icon">{% icon 'login' 'icon-lg' %}</span><h3>Check in and out</h3><p>Check in when you arrive and out when you leave. Your bay is freed for the next driver at once.</p></article>
+      <article class="card feature"><span class="tile-icon ok">{% icon 'shield' 'icon-lg' %}</span><h3>Safe and private</h3><p>Only you can see your bookings and payments. Accounts are protected against guessing attacks.</p></article>
+      <article class="card feature"><span class="tile-icon warn">{% icon 'chart' 'icon-lg' %}</span><h3>Dashboard for operators</h3><p>Revenue, occupancy, bookings and users in one place, with charts and CSV export.</p></article>
+    </div>
   </div>
 </section>
 
 <section id="how-it-works" class="section">
-  <h2>How it works</h2>
-  <ol class="steps">
-    <li>Create an account</li>
-    <li>Search a parking location</li>
-    <li>Pick an available slot and book</li>
-    <li>Check in, park, check out and pay</li>
-  </ol>
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">How it works</span><h2>Parked in four steps</h2></div>
+    <div class="steps-grid">
+      <article class="card step-card"><h3>Create an account</h3><p>Sign up with your email in under a minute.</p></article>
+      <article class="card step-card"><h3>Pick a free bay</h3><p>Search a location and tap a green bay.</p></article>
+      <article class="card step-card"><h3>Book and pay</h3><p>Choose your hours, see the fee and confirm.</p></article>
+      <article class="card step-card"><h3>Park and go</h3><p>Check in on arrival, check out when you leave.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band">
+      <div><h2>Ready to park smarter?</h2><p>Create a free account and book your first bay today.</p></div>
+      <div class="actions">
+        {% if user.is_authenticated %}<a class="btn btn-ghost btn-lg" href="{% url 'parking:location_list' %}">Find parking</a>
+        {% else %}<a class="btn btn-ghost btn-lg" href="{% url 'accounts:register' %}">Get started free</a>{% endif %}
+      </div>
+    </div>
+  </div>
 </section>
 {% endblock %}

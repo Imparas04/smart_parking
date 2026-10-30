@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" role="img" aria-labelledby="t d">
+  <title id="t">A parking lot seen from above</title>
+  <desc id="d">Cars parked in two rows of bays, several bays marked free, and one car driving along the lane.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef2ff"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6ebf5"/><stop offset="1" stop-color="#d5dcec"/></linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#4f46e5" flood-opacity=".2"/></filter>
+  </defs>
+  <style>
+    .free{fill:#10b981;fill-opacity:.16;animation:glow 2.8s ease-in-out infinite}
+    .d2{animation-delay:.9s}.d3{animation-delay:1.8s}
+    .tick{fill:none;stroke:#059669;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;animation:tick 2.8s ease-in-out infinite}
+    .mover{animation:drive 11s linear infinite}
+    @keyframes glow{0%,100%{fill-opacity:.1}50%{fill-opacity:.32}}
+    @keyframes tick{0%,100%{opacity:.55}50%{opacity:1}}
+    @keyframes drive{from{transform:translateX(-150px)}to{transform:translateX(720px)}}
+    @media (prefers-reduced-motion:reduce){.free,.tick,.mover{animation:none}}
+  </style>
+  <rect x="8" y="8" width="624" height="504" rx="32" fill="url(#bg)"/>
+  <rect x="48" y="64" width="544" height="392" rx="24" fill="url(#road)" filter="url(#sh)"/>
+  <g stroke="#fff" stroke-width="3.5" stroke-linecap="round">
+    <path d="M80 84v112M176 84v112M272 84v112M368 84v112M464 84v112M560 84v112"/>
+    <path d="M80 324v112M176 324v112M272 324v112M368 324v112M464 324v112M560 324v112"/>
+    <path d="M72 260h496" stroke-dasharray="18 14" stroke-width="4"/>
+  </g>
+  <!-- top row cars (slots 1,2,4) -->
+  <g>
+    <g transform="translate(98 94)"><rect width="56" height="92" rx="16" fill="#4f46e5"/><rect x="8" y="46" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="14" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="84" width="10" height="5" rx="2.5" fill="#fde68a"/><rect x="38" y="84" width="10" height="5" rx="2.5" fill="#fde68a"/></g>
+    <g transform="translate(194 94)"><rect width="56" height="92" rx="16" fill="#f43f5e"/><rect x="8" y="46" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="14" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="84" width="10" height="5" rx="2.5" fill="#fde68a"/><rect x="38" y="84" width="10" height="5" rx="2.5" fill="#fde68a"/></g>
+    <g transform="translate(386 94)"><rect width="56" height="92" rx="16" fill="#f59e0b"/><rect x="8" y="46" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="14" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="84" width="10" height="5" rx="2.5" fill="#fff"/><rect x="38" y="84" width="10" height="5" rx="2.5" fill="#fff"/></g>
+  </g>
+  <!-- bottom row cars (slots 1,3,4) nose toward the lane -->
+  <g>
+    <g transform="translate(98 334)"><rect width="56" height="92" rx="16" fill="#10b981"/><rect x="8" y="26" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="64" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/><rect x="38" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/></g>
+    <g transform="translate(290 334)"><rect width="56" height="92" rx="16" fill="#64748b"/><rect x="8" y="26" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="64" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/><rect x="38" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/></g>
+    <g transform="translate(386 334)"><rect width="56" height="92" rx="16" fill="#818cf8"/><rect x="8" y="26" width="40" height="20" rx="6" fill="#fff" fill-opacity=".85"/><rect x="11" y="64" width="34" height="14" rx="5" fill="#fff" fill-opacity=".55"/><rect x="8" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/><rect x="38" y="3" width="10" height="5" rx="2.5" fill="#fde68a"/></g>
+  </g>
+  <!-- free bays -->
+  <rect class="free" x="284" y="92" width="84" height="96" rx="12"/>
+  <path class="tick" transform="translate(326 140)" d="M-14 0l10 10 20-22"/>
+  <rect class="free d2" x="476" y="92" width="76" height="96" rx="12"/>
+  <path class="tick" transform="translate(514 140)" d="M-14 0l10 10 20-22" style="animation-delay:.9s"/>
+  <rect class="free d3" x="188" y="332" width="76" height="96" rx="12"/>
+  <path class="tick" transform="translate(226 380)" d="M-14 0l10 10 20-22" style="animation-delay:1.8s"/>
+  <rect class="free d2" x="476" y="332" width="76" height="96" rx="12"/>
+  <path class="tick" transform="translate(514 380)" d="M-14 0l10 10 20-22" style="animation-delay:.9s"/>
+  <!-- the car on its way in -->
+  <g class="mover"><g transform="translate(0 236)">
+    <rect width="96" height="48" rx="16" fill="#0ea5e9"/><rect x="58" y="8" width="22" height="32" rx="7" fill="#fff" fill-opacity=".85"/><rect x="14" y="10" width="14" height="28" rx="5" fill="#fff" fill-opacity=".55"/><rect x="90" y="8" width="5" height="10" rx="2.5" fill="#fde68a"/><rect x="90" y="30" width="5" height="10" rx="2.5" fill="#fde68a"/>
+  </g></g>
+  <!-- P badge and availability chip -->
+  <rect x="30" y="26" width="58" height="58" rx="18" fill="#4f46e5" filter="url(#sh)"/>
+  <path d="M51 68V42h10a8 8 0 0 1 0 16H51" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="440" y="24" width="160" height="42" rx="21" fill="#fff" filter="url(#sh)"/>
+  <circle cx="465" cy="45" r="7" fill="#10b981"/>
+  <text x="482" y="51" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#0f172a">4 bays free</text>
+</svg>

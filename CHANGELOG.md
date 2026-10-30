@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- **Phase 9, frontend redesign.** New light, clean, modern design system (indigo accent, cards, soft shadows, system fonts, no external requests). New landing page with search, live
+  availability numbers, popular locations, features and steps. Hand-made animated SVG illustrations (parking lot, sign-up art, error and empty states), an icon set, location cards with
+  availability bars, icon slot tiles, a booking summary card, a booking progress stepper, split-layout login and register, restyled dashboard and tables. Real-browser QA tool and screenshots.
+  Fixed on the way: dashboard charts overflowing their grid, slots sorted as text (A-10 before A-2), wide tables.
+
 ## 1.0.0
 
 Delivered phase by phase.

@@ -6,7 +6,7 @@
     return;
   }
   var d = JSON.parse(el.textContent);
-  var GREEN = '#22c55e', RED = '#ef4444', GREY = '#94a3b8', BLUE = '#2563eb', AMBER = '#f59e0b', PURPLE = '#8b5cf6';
+  var GREEN = '#22c55e', RED = '#ef4444', GREY = '#94a3b8', BLUE = '#4f46e5', AMBER = '#f59e0b', PURPLE = '#8b5cf6';
   Chart.defaults.font.family = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
   function make(id, cfg) {
     var c = document.getElementById(id);

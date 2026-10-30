@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-label="Empty parking bays">
+  <ellipse cx="160" cy="110" rx="140" ry="82" fill="#eef2ff"/>
+  <g fill="none" stroke="#a5b4fc" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="52" y="58" width="62" height="90" rx="12"/><rect x="129" y="58" width="62" height="90" rx="12"/><rect x="206" y="58" width="62" height="90" rx="12"/>
+  </g>
+  <g fill="none" stroke="#4f46e5" stroke-width="8" stroke-linecap="round"><circle cx="196" cy="96" r="30" fill="#fff" fill-opacity=".9"/><path d="M219 120l28 28"/></g>
+  <path d="M184 96h24M196 84v24" stroke="#4f46e5" stroke-width="5" stroke-linecap="round" transform="rotate(45 196 96)"/>
+</svg>

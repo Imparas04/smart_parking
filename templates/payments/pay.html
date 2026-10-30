@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load ui %}
 {% block title %}Pay for {{ booking.reference }}{% endblock %}
 {% block content %}
-<section class="auth-card card wide">
-  <div class="sim-banner"><strong>SIMULATED PAYMENT</strong> &mdash; this is a demo. No real money is charged and no card details are collected.</div>
-  <p><a href="{{ booking.get_absolute_url }}">&larr; Booking {{ booking.reference }}</a></p>
-  <h1>Pay &#8377;{{ payment.amount_due }}</h1>
+<section class="auth-card wide">
+  <div class="sim-banner">{% icon 'info' %}<span><strong>SIMULATED PAYMENT</strong> &mdash; this is a demo. No real money is charged and no card details are collected.</span></div>
+  <a class="back-link flush" href="{{ booking.get_absolute_url }}">{% icon 'arrow' %} Booking {{ booking.reference }}</a>
+  <h1 class="stack-top">Pay &#8377;{{ payment.amount_due }}</h1>
   <p class="muted">{{ booking.slot.location.name }} &middot; Slot {{ booking.slot.slot_number }} &middot; {{ booking.start_time|date:"d M, H:i" }} &ndash; {{ booking.end_time|date:"d M, H:i" }}</p>
-  {% if payment.status == 'failed' %}<div class="alert alert-error">The last simulated attempt failed. You can try again.</div>{% endif %}
+  {% if payment.status == 'failed' %}<div class="alert alert-error">{% icon 'alert' %} The last simulated attempt failed. You can try again.</div>{% endif %}
   <form method="post" novalidate>
     {% csrf_token %}
     {% include 'accounts/_form_fields.html' %}
-    <button class="btn btn-primary btn-block" type="submit">Pay &#8377;{{ payment.amount_due }} (simulated)</button>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">{% icon 'lock' %} Pay &#8377;{{ payment.amount_due }} (simulated)</button>
   </form>
 </section>
 {% endblock %}

@@ -1,6 +1,6 @@
 # Testing guide
 
-At delivery: **220 automated tests, all passing, 97% line coverage** of `apps/` and `config/` (SQLite; measured over everything including the test files, with no exclusions. The production-settings branch, `wsgi.py`/`asgi.py` and the concurrency helper run in subprocesses that the coverage tool cannot see, but are tested that way). Plus a 64-request Postman/Newman API run and the manual
+At delivery: **240 automated tests, all passing, 97% line coverage** of `apps/` and `config/` (SQLite; measured over everything including the test files, with no exclusions. The production-settings branch, `wsgi.py`/`asgi.py` and the concurrency helper run in subprocesses that the coverage tool cannot see, but are tested that way). Plus a 64-request Postman/Newman API run and the manual
 checklist at the end of this page.
 
 ## Running the checks
@@ -38,6 +38,7 @@ A GitHub Actions workflow (`.github/workflows/ci.yml`) runs the checks above on 
 | Concurrency | `apps/core/test_concurrency_file_db.py` | The same race on a real SQLite file: one booking, seven clean refusals, no lock errors |
 | Deployment | `apps/core/test_deploy.py`, `apps/core/test_docs.py` | `collectstatic` with the production storage, every template static reference resolves, docs match the code, links and commands in the docs exist |
 | Demo data | `apps/parking/test_seed_demo.py` | The demo command, its safety refusal when debug is off |
+| Design | `apps/core/test_design.py` | Live home page data, template helpers, every illustration well-formed and safe, every icon used exists in the sprite, image alt text |
 
 **The tests are checked against deliberately broken code.** Several were verified by putting a bug back and confirming the test fails: removing the slot-overlap
 check (the concurrency test fails on "never more than one booking"), restoring the unsafe query-parameter handling (the regression and fuzz tests fail), and
@@ -74,9 +75,23 @@ Measured once in the build sandbox (SQLite, one process) with **6,025 bookings, 
 
 Query counts do not grow with the number of rows. The CSV export is capped at 10,000 rows. This is a sanity check, not a load test.
 
+## Browser checks
+
+`tools/screenshots.mjs` drives a real (headless) Chrome through the main pages as a visitor, a user and an admin, at desktop and phone width, and fails if the browser reports anything:
+console errors (including Content-Security-Policy violations), failed requests, HTTP errors, horizontal page overflow, a missing fee estimate, or fewer than 5 dashboard charts. It also writes the screenshots in `docs/screenshots/`.
+
+```bash
+npm install puppeteer-core
+python manage.py seed_demo && python manage.py runserver
+BASE=http://127.0.0.1:8000 CHROME_PATH="/path/to/chrome" node tools/screenshots.mjs
+```
+
+Result at delivery, Chromium 131: **no console or CSP errors, no failed requests, all 5 charts created and drawn, the live fee estimate works, and no horizontal overflow on any key page at 1366, 1024, 768 and 390 px.**
+Data tables fit at laptop width and scroll inside their own container on narrower screens.
+
 ## What is not covered
 
-- **No real browser testing.** Page structure, headers, scripts and chart data are tested, and `main.js`, `booking.js` and `dashboard.js` were run in Node against the real data with a stand-in for Chart.js, but nobody has watched the charts draw, the responsive layout, or the browser console for Content-Security-Policy messages. Please do the manual checklist below in a real browser.
+- **Limited browser coverage.** Pages were checked in headless Chromium only (see above). Firefox, Safari, older browsers and a physical phone were not tried, and the sandbox browser could not run animations, so chart animations were switched off for the screenshots. Please also do the manual checklist below on your own devices.
 - **MySQL** was never run. **Real concurrency on MySQL/PostgreSQL** (row locking) is untested; the simultaneous-booking tests ran on SQLite.
 - **No load or stress testing** beyond the sanity check above, and no external security audit.
 - Payments are simulated, so no payment gateway behaviour is tested.

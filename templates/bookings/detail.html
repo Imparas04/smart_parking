@@ -1,61 +1,66 @@
 {% extends 'base.html' %}
+{% load ui %}
 {% block title %}Booking {{ booking.reference }}{% endblock %}
 {% block content %}
-<section class="auth-card card wide">
-  <p><a href="{% url 'bookings:history' %}">&larr; My bookings</a></p>
-  <h1>Booking {{ booking.reference }} <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span></h1>
-  <dl class="details">
-    <dt>Location</dt><dd><a href="{{ booking.slot.location.get_absolute_url }}">{{ booking.slot.location.name }}</a>, {{ booking.slot.location.city }}</dd>
-    <dt>Address</dt><dd>{{ booking.slot.location.address }}</dd>
-    <dt>Slot</dt><dd>{{ booking.slot.slot_number }} ({{ booking.slot.get_slot_type_display }})</dd>
-    <dt>Vehicle</dt><dd>{{ booking.vehicle.plate_number }} &middot; {{ booking.vehicle.get_vehicle_type_display }}</dd>
-    <dt>From</dt><dd>{{ booking.start_time|date:"D, d M Y, H:i" }}</dd>
-    <dt>To</dt><dd>{{ booking.end_time|date:"D, d M Y, H:i" }}</dd>
-    <dt>Rate</dt><dd>&#8377;{{ booking.slot.location.hourly_rate }} per hour</dd>
-    {% if booking.checked_in_at %}<dt>Checked in</dt><dd>{{ booking.checked_in_at|date:"d M Y, H:i" }}</dd>{% endif %}
-    {% if booking.checked_out_at %}<dt>Checked out</dt><dd>{{ booking.checked_out_at|date:"d M Y, H:i" }}</dd>{% endif %}
-    {% if booking.cancelled_at %}<dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"d M Y, H:i" }}</dd>{% endif %}
-  </dl>
+<a class="back-link" href="{% url 'bookings:history' %}">{% icon 'arrow' %} My bookings</a>
+<div class="page-head">
+  <div><h1>Booking {{ booking.reference }}</h1><p class="muted">{{ booking.slot.location.name }} &middot; Slot {{ booking.slot.slot_number }}</p></div>
+  <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+</div>
 
-  {% if booking.payment %}
-  <div class="charges">
-    <h3>Charges</h3>
+<div class="detail-layout">
+  <section class="card">
+    <div class="stepper" aria-label="Booking progress">
+      <div class="step done">Booked</div>
+      <div class="step {% if booking.status == 'completed' or booking.status == 'checked_in' %}done{% elif booking.status == 'confirmed' %}current{% else %}stopped{% endif %}">Checked in</div>
+      <div class="step {% if booking.status == 'completed' %}done{% elif booking.status == 'checked_in' %}current{% elif booking.status == 'cancelled' or booking.status == 'no_show' %}stopped{% endif %}">Completed</div>
+    </div>
     <dl class="details">
-      <dt>{% if booking.status == 'completed' %}Final amount{% else %}Estimated{% endif %}</dt><dd><strong>&#8377;{{ booking.payment.amount }}</strong></dd>
-      <dt>Paid</dt><dd>&#8377;{{ booking.payment.amount_paid }}</dd>
-      <dt>Payment</dt><dd><span class="badge badge-pay-{{ booking.payment.status }}">{{ booking.payment.get_status_display }}</span>
-        {% if booking.payment.transaction_id %}<span class="muted">{{ booking.payment.transaction_id }}</span>{% endif %}</dd>
-      {% if booking.payment.can_pay and booking.status != 'cancelled' and booking.status != 'no_show' %}
-      <dt>Amount due</dt><dd>&#8377;{{ booking.payment.amount_due }}</dd>
-      {% endif %}
+      <dt>Location</dt><dd><a href="{{ booking.slot.location.get_absolute_url }}">{{ booking.slot.location.name }}</a>, {{ booking.slot.location.city }}</dd>
+      <dt>Address</dt><dd>{{ booking.slot.location.address }}</dd>
+      <dt>Slot</dt><dd>{{ booking.slot.slot_number }} ({{ booking.slot.get_slot_type_display }})</dd>
+      <dt>Vehicle</dt><dd>{{ booking.vehicle.plate_number }} &middot; {{ booking.vehicle.get_vehicle_type_display }}</dd>
+      <dt>From</dt><dd>{{ booking.start_time|date:"D, d M Y, H:i" }}</dd>
+      <dt>To</dt><dd>{{ booking.end_time|date:"D, d M Y, H:i" }}</dd>
+      <dt>Rate</dt><dd>&#8377;{{ booking.slot.location.hourly_rate }} per hour</dd>
+      {% if booking.checked_in_at %}<dt>Checked in</dt><dd>{{ booking.checked_in_at|date:"d M Y, H:i" }}</dd>{% endif %}
+      {% if booking.checked_out_at %}<dt>Checked out</dt><dd>{{ booking.checked_out_at|date:"d M Y, H:i" }}</dd>{% endif %}
+      {% if booking.cancelled_at %}<dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"d M Y, H:i" }}</dd>{% endif %}
     </dl>
-    <p class="muted small">Billed per hour (rounded up, minimum 1 hour). Leaving early does not reduce the charge; staying past the end time is billed extra.</p>
+
+    <div class="actions stack-top">
+    {% if booking.status == 'confirmed' %}
+      {% if not check_in_reason %}
+        <form method="post" action="{% url 'bookings:check_in' booking.reference %}">{% csrf_token %}<button class="btn btn-primary" type="submit">{% icon 'login' %} Check in</button></form>
+      {% endif %}
+      {% if not cancel_reason %}
+        <form method="post" action="{% url 'bookings:cancel' booking.reference %}" data-confirm="Cancel this booking?">{% csrf_token %}<button class="btn btn-danger" type="submit">Cancel booking</button></form>
+      {% endif %}
+    {% elif booking.status == 'checked_in' %}
+      <form method="post" action="{% url 'bookings:check_out' booking.reference %}" data-confirm="Check out and complete this booking?">{% csrf_token %}<button class="btn btn-primary" type="submit">{% icon 'logout' %} Check out</button></form>
+    {% endif %}
+    </div>
+    {% if booking.status == 'confirmed' %}
+      {% if check_in_reason %}<p class="muted small stack-top">{{ check_in_reason }}</p>{% endif %}
+      {% if cancel_reason %}<p class="muted small">{{ cancel_reason }}</p>{% endif %}
+    {% endif %}
+  </section>
+
+  <aside class="card summary-card">
+    {% if booking.payment %}
+    <h3>Charges</h3>
+    <dl class="details details-tight">
+      <dt>{% if booking.status == 'completed' %}Final amount{% else %}Estimated{% endif %}</dt><dd><strong class="price">&#8377;{{ booking.payment.amount }}</strong></dd>
+      <dt>Paid</dt><dd>&#8377;{{ booking.payment.amount_paid }}</dd>
+      <dt>Payment</dt><dd><span class="badge badge-pay-{{ booking.payment.status }}">{{ booking.payment.get_status_display }}</span></dd>
+      {% if booking.payment.transaction_id %}<dt>Reference</dt><dd class="small">{{ booking.payment.transaction_id }}</dd>{% endif %}
+      {% if booking.payment.can_pay and booking.status != 'cancelled' and booking.status != 'no_show' %}<dt>Amount due</dt><dd><strong>&#8377;{{ booking.payment.amount_due }}</strong></dd>{% endif %}
+    </dl>
+    <p class="muted small stack-top">Billed per hour (rounded up, minimum 1 hour). Leaving early does not reduce the charge; staying past the end time is billed extra.</p>
     {% if booking.payment.can_pay and booking.status != 'cancelled' and booking.status != 'no_show' %}
-      <a class="btn btn-primary" href="{% url 'payments:pay' booking.reference %}">Pay now (simulated)</a>
+      <a class="btn btn-primary btn-block btn-lg" href="{% url 'payments:pay' booking.reference %}">{% icon 'wallet' %} Pay now (simulated)</a>
     {% endif %}
-  </div>
-  {% endif %}
-
-  <div class="actions stack-top">
-  {% if booking.status == 'confirmed' %}
-    {% if not check_in_reason %}
-      <form method="post" action="{% url 'bookings:check_in' booking.reference %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Check in</button></form>
-    {% endif %}
-  {% elif booking.status == 'checked_in' %}
-    <form method="post" action="{% url 'bookings:check_out' booking.reference %}" data-confirm="Check out and complete this booking?">{% csrf_token %}<button class="btn btn-primary" type="submit">Check out</button></form>
-  {% endif %}
-  </div>
-  {% if booking.status == 'confirmed' and check_in_reason %}<p class="muted">{{ check_in_reason }}</p>{% endif %}
-
-  {% if booking.status == 'confirmed' %}
-    {% if cancel_reason %}
-      <p class="muted">{{ cancel_reason }}</p>
-    {% else %}
-      <form method="post" action="{% url 'bookings:cancel' booking.reference %}" data-confirm="Cancel this booking?">
-        {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Cancel booking</button>
-      </form>
-    {% endif %}
-  {% endif %}
-</section>
+    {% else %}<p class="muted">No payment record.</p>{% endif %}
+  </aside>
+</div>
 {% endblock %}

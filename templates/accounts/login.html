@@ -1,14 +1,19 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Login{% endblock %}
 {% block content %}
-<section class="auth-card card">
-  <h1>Login</h1>
-  <form method="post" novalidate>
-    {% csrf_token %}
-    {% include 'accounts/_form_fields.html' %}
-    <input type="hidden" name="next" value="{{ next }}">
-    <button class="btn btn-primary btn-block" type="submit">Login</button>
-  </form>
-  <p class="muted">No account? <a href="{% url 'accounts:register' %}">Register</a></p>
-</section>
+<div class="auth-layout">
+  <div class="auth-aside"><img src="{% static 'img/auth-art.svg' %}" alt="" width="520" height="560"></div>
+  <section class="auth-panel">
+    <h1>Welcome back</h1>
+    <p class="muted">Log in to manage your bookings and parking.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include 'accounts/_form_fields.html' %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Login</button>
+    </form>
+    <p class="muted stack-top">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+  </section>
+</div>
 {% endblock %}

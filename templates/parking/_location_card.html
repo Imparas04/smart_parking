@@ -1,0 +1,23 @@
+{% load ui %}
+<article class="card card-hover loc-card">
+  <div class="loc-art art-{{ loc.pk|art }}">
+    <svg viewBox="0 0 300 112" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+      <g fill="#fff" fill-opacity=".55"><rect x="14" y="92" width="272" height="3" rx="1.5"/></g>
+      <g fill="#fff" fill-opacity=".85"><rect x="30" y="52" width="44" height="40" rx="12"/><rect x="104" y="46" width="52" height="46" rx="14"/><rect x="190" y="56" width="40" height="36" rx="11"/></g>
+      <g fill="#4f46e5" fill-opacity=".28"><rect x="40" y="60" width="24" height="12" rx="5"/><rect x="116" y="55" width="28" height="13" rx="5"/><rect x="198" y="63" width="24" height="11" rx="5"/></g>
+      <g fill="#4f46e5"><rect x="16" y="12" width="34" height="34" rx="10"/></g>
+      <path d="M27 38V20h6.5a4.6 4.6 0 0 1 0 9.2H27" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    {% if loc.available_slots %}<span class="badge badge-available">{{ loc.available_slots }} free</span>{% else %}<span class="badge badge-occupied">Full</span>{% endif %}
+  </div>
+  <div class="loc-body">
+    <h3><a href="{{ loc.get_absolute_url }}">{{ loc.name }}</a>{% if not loc.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</h3>
+    <div class="loc-meta">{% icon 'pin' %}<span>{{ loc.address }}, {{ loc.city }}</span></div>
+    <div class="meter {{ loc.available_slots|meter_class:loc.total_slots }}" role="img" aria-label="{{ loc.available_slots }} of {{ loc.total_slots }} slots free"><span style="--fill: {{ loc.available_slots|pct:loc.total_slots }}%"></span></div>
+    <div class="loc-meta small">{{ loc.available_slots }} of {{ loc.total_slots }} slots free</div>
+    <div class="loc-foot">
+      <div class="price">&#8377;{{ loc.hourly_rate }}<small> / hour</small></div>
+      <a class="btn btn-primary btn-sm" href="{{ loc.get_absolute_url }}">View slots {% icon 'arrow' %}</a>
+    </div>
+  </div>
+</article>

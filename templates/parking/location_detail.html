@@ -1,46 +1,61 @@
 {% extends 'base.html' %}
+{% load static ui %}
 {% block title %}{{ location.name }}{% endblock %}
 {% block content %}
-<section class="section">
-  <p><a href="{% url 'parking:location_list' %}">&larr; All locations</a></p>
-  <div class="page-head">
-    <div>
-      <h1>{{ location.name }}{% if not location.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</h1>
-      <p class="muted">{{ location.address }}, {{ location.city }} &middot; Open {{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }} &middot; <strong>&#8377;{{ location.hourly_rate }}</strong>/hour</p>
-    </div>
-    {% if user.profile.is_admin_role %}
-    <div class="actions">
-      <a class="btn btn-ghost" href="{% url 'parking:location_update' location.pk %}">Edit</a>
-      <a class="btn btn-ghost" href="{% url 'parking:slot_create' location.pk %}">+ Slot</a>
-      <a class="btn btn-ghost" href="{% url 'parking:slot_bulk_create' location.pk %}">+ Many slots</a>
-      <a class="btn btn-danger" href="{% url 'parking:location_delete' location.pk %}">Delete</a>
-    </div>
-    {% endif %}
+<a class="back-link" href="{% url 'parking:location_list' %}">{% icon 'arrow' %} All locations</a>
+<div class="page-head">
+  <div>
+    <h1>{{ location.name }}{% if not location.is_active %} <span class="badge badge-unavailable">Inactive</span>{% endif %}</h1>
+    <p class="muted">{% icon 'pin' %} {{ location.address }}, {{ location.city }}</p>
   </div>
-  {% if location.description %}<p>{{ location.description }}</p>{% endif %}
-
-  <div class="legend">
-    <span><i class="dot slot-available"></i> Available ({{ available }})</span>
-    <span><i class="dot slot-occupied"></i> Occupied ({{ occupied }})</span>
-    <span><i class="dot slot-unavailable"></i> Unavailable ({{ unavailable }})</span>
-    <form method="get" class="inline-form">
-      <select name="slot_type" data-autosubmit aria-label="Filter by slot type">
-        <option value="">All types</option>
-        {% for value, label in slot_types %}<option value="{{ value }}" {% if value == slot_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
-      </select>
-    </form>
+  {% if user.profile.is_admin_role %}
+  <div class="actions">
+    <a class="btn btn-ghost btn-sm" href="{% url 'parking:location_update' location.pk %}">Edit</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'parking:slot_create' location.pk %}">{% icon 'plus' %} Slot</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'parking:slot_bulk_create' location.pk %}">{% icon 'plus' %} Many slots</a>
+    <a class="btn btn-danger btn-sm" href="{% url 'parking:location_delete' location.pk %}">Delete</a>
   </div>
-
-  {% if slots %}
-  <div class="slot-grid">
-    {% for slot in slots %}
-    <a class="slot slot-{{ slot.status }}" href="{{ slot.get_absolute_url }}" title="{{ slot.get_status_display }} &middot; {{ slot.get_slot_type_display }}">
-      <strong>{{ slot.slot_number }}</strong><small>{{ slot.get_slot_type_display }}</small>
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty card"><h3>No slots to show</h3><p class="muted">{% if total %}No slots match this type.{% else %}This location has no slots yet.{% endif %}</p></div>
   {% endif %}
-</section>
+</div>
+
+<div class="detail-layout">
+  <section class="card">
+    <div class="row between">
+      <h2 class="flush">Choose a bay</h2>
+      <form method="get" class="inline-form">
+        <select name="slot_type" data-autosubmit aria-label="Filter by slot type">
+          <option value="">All types</option>
+          {% for value, label in slot_types %}<option value="{{ value }}" {% if value == slot_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="legend">
+      <span><i class="dot slot-available"></i> Available ({{ available }})</span>
+      <span><i class="dot slot-occupied"></i> Occupied ({{ occupied }})</span>
+      <span><i class="dot slot-unavailable"></i> Unavailable ({{ unavailable }})</span>
+    </div>
+    {% if slots %}
+    <div class="slot-grid">
+      {% for slot in slots %}
+      <a class="slot slot-{{ slot.status }}" href="{{ slot.get_absolute_url }}" title="{{ slot.get_status_display }} &middot; {{ slot.get_slot_type_display }}">
+        {% icon slot.slot_type|slot_icon %}<strong>{{ slot.slot_number }}</strong><small>{{ slot.get_status_display }}</small>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty"><img src="{% static 'img/empty-state.svg' %}" alt="" width="220" height="138"><h3>No slots to show</h3><p class="muted">{% if total %}No slots match this type.{% else %}This location has no slots yet.{% endif %}</p></div>
+    {% endif %}
+  </section>
+
+  <aside class="card summary-card">
+    <h3>About this location</h3>
+    {% if location.description %}<p class="muted">{{ location.description }}</p>{% endif %}
+    <ul class="info-list">
+      <li><span class="tile-icon">{% icon 'tag' %}</span><div><small>Rate</small><strong class="price">&#8377;{{ location.hourly_rate }}<small> per hour</small></strong></div></li>
+      <li><span class="tile-icon warn">{% icon 'clock' %}</span><div><small>Opening hours</small><strong>{% if location.is_24h %}Open 24 hours{% else %}{{ location.opening_time|time:"H:i" }} &ndash; {{ location.closing_time|time:"H:i" }}{% endif %}</strong></div></li>
+      <li><span class="tile-icon ok">{% icon 'car' %}</span><div><small>Availability</small><strong>{{ available }} of {{ total }} bays free</strong></div></li>
+    </ul>
+    <div class="meter {{ available|meter_class:total }} stack-top" role="img" aria-label="{{ available }} of {{ total }} bays free"><span style="--fill: {{ available|pct:total }}%"></span></div>
+  </aside>
+</div>
 {% endblock %}

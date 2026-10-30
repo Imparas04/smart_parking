@@ -1,14 +1,17 @@
 {% extends 'base.html' %}
+{% load ui %}
 {% block title %}My Profile{% endblock %}
 {% block content %}
-<section class="auth-card card">
-  <h1>My profile</h1>
-  <p class="muted">Username: <strong>{{ request.user.username }}</strong> &middot; Role: <strong>{{ request.user.profile.get_role_display }}</strong></p>
+<section class="auth-card wide">
+  <div class="row loose">
+    <span class="avatar" aria-hidden="true">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span>
+    <div><h1 class="flush">My profile</h1><p class="muted flush">@{{ request.user.username }} &middot; <span class="badge badge-confirmed">{{ request.user.profile.get_role_display }}</span></p></div>
+  </div>
   <form method="post" novalidate>
     {% csrf_token %}
     {% include 'accounts/_form_fields.html' %}
-    <button class="btn btn-primary btn-block" type="submit">Save changes</button>
+    <button class="btn btn-primary" type="submit">Save changes</button>
+    <a class="btn btn-ghost" href="{% url 'accounts:password_change' %}">{% icon 'lock' %} Change password</a>
   </form>
-  <p class="muted"><a href="{% url 'accounts:password_change' %}">Change password</a></p>
 </section>
 {% endblock %}

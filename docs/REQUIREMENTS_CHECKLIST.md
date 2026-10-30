@@ -16,7 +16,7 @@ Status of every item in the *Smart Parking Management System* internship assignm
 
 | # | Requirement | Status | Where |
 |---|---|---|---|
-| 1 | Responsive Home Page | ✅ | `/`; CSS breakpoints, mobile menu. ⚠️ not visually checked on real devices |
+| 1 | Responsive Home Page | ✅ | `/`; landing page with search, live numbers and illustrations. Checked in headless Chrome at 1366, 1024, 768 and 390 px with no overflow. ⚠️ not tried on a physical phone |
 | 2 | Login and Registration pages | ✅ | `/accounts/login/`, `/accounts/register/` |
 | 3 | Parking Locations page | ✅ | `/parking/` with search and filters |
 | 4 | Display available and occupied slots | ✅ | Colour-coded grid on `/parking/<id>/` |
@@ -25,7 +25,7 @@ Status of every item in the *Smart Parking Management System* internship assignm
 | 7 | Booking History page | ✅ | `/bookings/` |
 | 8 | User Profile page | ✅ | `/accounts/profile/` |
 | 9 | Admin Dashboard | ✅ | `/dashboard/` and its Bookings and Users pages |
-| 10 | Availability and booking statistics in charts | ⚠️ | Five Chart.js charts. Data and script were verified; **no one has watched them render in a browser** |
+| 10 | Availability and booking statistics in charts | ✅ | Five Chart.js charts, verified drawing in headless Chromium (see `docs/screenshots/dashboard.png`) |
 
 ## Task 2: Backend (REST APIs)
 
@@ -112,7 +112,7 @@ Schema, constraints and an ER diagram: [DATABASE.md](DATABASE.md).
 - **Payments are simulated**: no gateway, no real money; a real gateway would need integrating.
 - **No password-reset or email-verification flow**; no email/SMS notifications.
 - **API tokens do not expire** (logging out revokes them).
-- **Not tested on MySQL**, on a real hosting provider, or in a real browser (charts, layout, console).
+- **Not tested on MySQL**, on a real hosting provider, or on Firefox, Safari or a physical phone (headless Chrome only).
 - **Login throttling uses a per-process cache** by default; use a shared cache when running several workers.
 - A booking cannot be edited, only cancelled and rebooked. One time zone (India) for the whole site.
 - The CSV export is capped at 10,000 rows. No images, maps or geolocation for locations.

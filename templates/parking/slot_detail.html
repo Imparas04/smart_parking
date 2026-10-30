@@ -1,30 +1,40 @@
 {% extends 'base.html' %}
+{% load ui %}
 {% block title %}Slot {{ slot.slot_number }}{% endblock %}
 {% block content %}
-<section class="auth-card card wide">
-  <p><a href="{{ location.get_absolute_url }}">&larr; {{ location.name }}</a></p>
-  <h1>Slot {{ slot.slot_number }} <span class="badge badge-{{ slot.status }}">{{ slot.get_status_display }}</span></h1>
-  <dl class="details">
-    <dt>Location</dt><dd>{{ location.name }}, {{ location.city }}</dd>
-    <dt>Address</dt><dd>{{ location.address }}</dd>
-    <dt>Slot type</dt><dd>{{ slot.get_slot_type_display }}</dd>
-    <dt>Rate</dt><dd>&#8377;{{ location.hourly_rate }} per hour</dd>
-    <dt>Hours</dt><dd>{{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }}</dd>
-    {% if slot.notes %}<dt>Notes</dt><dd>{{ slot.notes }}</dd>{% endif %}
-  </dl>
-  {% if not location.is_active or slot.status == 'unavailable' %}
-    <p class="muted">This slot is currently unavailable for booking.</p>
-  {% elif user.is_authenticated %}
-    {% if slot.status == 'occupied' %}<p class="muted">Currently occupied &mdash; you can still reserve a later time.</p>{% endif %}
-    <a class="btn btn-primary" href="{% url 'bookings:book' slot.pk %}">Book this slot</a>
-  {% else %}
-    <a class="btn btn-primary" href="{% url 'accounts:login' %}?next={% url 'bookings:book' slot.pk %}">Login to book</a>
-  {% endif %}
-  {% if user.profile.is_admin_role %}
-  <div class="actions">
-    <a class="btn btn-ghost" href="{% url 'parking:slot_update' slot.pk %}">Edit</a>
-    <a class="btn btn-danger" href="{% url 'parking:slot_delete' slot.pk %}">Delete</a>
-  </div>
-  {% endif %}
-</section>
+<a class="back-link" href="{{ location.get_absolute_url }}">{% icon 'arrow' %} {{ location.name }}</a>
+<div class="detail-layout">
+  <section class="card">
+    <div class="row loose">
+      <span class="tile-icon xl {% if slot.status == 'available' %}ok{% elif slot.status == 'occupied' %}bad{% endif %}">{% icon slot.slot_type|slot_icon 'icon-lg' %}</span>
+      <div><h1 class="flush">Slot {{ slot.slot_number }}</h1><span class="badge badge-{{ slot.status }}">{{ slot.get_status_display }}</span></div>
+    </div>
+    <dl class="details">
+      <dt>Location</dt><dd><a href="{{ location.get_absolute_url }}">{{ location.name }}</a>, {{ location.city }}</dd>
+      <dt>Address</dt><dd>{{ location.address }}</dd>
+      <dt>Slot type</dt><dd>{{ slot.get_slot_type_display }}</dd>
+      <dt>Rate</dt><dd class="price">&#8377;{{ location.hourly_rate }}<small> per hour</small></dd>
+      <dt>Hours</dt><dd>{% if location.is_24h %}Open 24 hours{% else %}{{ location.opening_time|time:"H:i" }}&ndash;{{ location.closing_time|time:"H:i" }}{% endif %}</dd>
+      {% if slot.notes %}<dt>Notes</dt><dd>{{ slot.notes }}</dd>{% endif %}
+    </dl>
+  </section>
+  <aside class="card summary-card">
+    <h3>Reserve this bay</h3>
+    {% if not location.is_active or slot.status == 'unavailable' %}
+      <p class="muted">This slot is currently unavailable for booking.</p>
+    {% elif user.is_authenticated %}
+      {% if slot.status == 'occupied' %}<p class="muted">Currently occupied &mdash; you can still reserve a later time.</p>{% else %}<p class="muted">This bay is free. Choose the hours you need and see the exact fee before you confirm.</p>{% endif %}
+      <a class="btn btn-primary btn-block btn-lg" href="{% url 'bookings:book' slot.pk %}">Book this slot</a>
+    {% else %}
+      <p class="muted">Log in to reserve this bay.</p>
+      <a class="btn btn-primary btn-block btn-lg" href="{% url 'accounts:login' %}?next={% url 'bookings:book' slot.pk %}">Login to book</a>
+    {% endif %}
+    {% if user.profile.is_admin_role %}
+    <div class="actions stack-top">
+      <a class="btn btn-ghost btn-sm" href="{% url 'parking:slot_update' slot.pk %}">Edit</a>
+      <a class="btn btn-danger btn-sm" href="{% url 'parking:slot_delete' slot.pk %}">Delete</a>
+    </div>
+    {% endif %}
+  </aside>
+</div>
 {% endblock %}

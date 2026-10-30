@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load ui %}
 {% block title %}All Bookings{% endblock %}
 {% block content %}
 <section class="section">
   <div class="page-head"><h1>All bookings</h1>
-    <a class="btn btn-ghost" href="{% url 'dashboard:bookings_export' %}?{{ querystring }}">Export CSV</a></div>
+    <a class="btn btn-ghost" href="{% url 'dashboard:bookings_export' %}?{{ querystring }}">{% icon 'download' %} Export CSV</a></div>
   {% include 'dashboard/_nav.html' %}
   <form method="get" class="filters card">
     <input type="search" name="q" value="{{ f.q }}" placeholder="Reference, user, email or plate">
@@ -18,15 +19,15 @@
   {% if page.object_list %}
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Reference</th><th>User</th><th>Location / slot</th><th>Vehicle</th><th>From</th><th>To</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
+      <thead><tr><th>Reference</th><th>User</th><th>Location / slot</th><th>Vehicle</th><th>When</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
       <tbody>
       {% for b in page.object_list %}
         <tr>
           <td><a href="{% url 'dashboard:booking_detail' b.reference %}">{{ b.reference }}</a></td>
           <td>{{ b.user.username }}</td>
-          <td>{{ b.slot.location.name }} / {{ b.slot.slot_number }}</td>
+          <td class="wrap">{{ b.slot.location.name }} / {{ b.slot.slot_number }}</td>
           <td>{{ b.vehicle.plate_number }}</td>
-          <td>{{ b.start_time|date:"d M Y, H:i" }}</td><td>{{ b.end_time|date:"d M Y, H:i" }}</td>
+          <td>{{ b.start_time|date:"d M Y, H:i" }}<br><span class="muted small">to {{ b.end_time|date:"d M Y, H:i" }}</span></td>
           <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
           <td>{% if b.payment %}&#8377;{{ b.payment.amount }}{% endif %}</td>
           <td>{% if b.payment %}<span class="badge badge-pay-{{ b.payment.status }}">{{ b.payment.get_status_display }}</span>{% endif %}</td>

@@ -1,3 +1,5 @@
+import re
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, ProtectedError, Q
@@ -45,12 +47,18 @@ def location_list(request):
     })
 
 
+def natural_slot_key(slot):
+    """Sort 'A-2' before 'A-10' (plain text order would put A-10 first)."""
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r'(\d+)', slot.slot_number)]
+
+
 def location_detail(request, pk):
     location = get_object_or_404(_visible_locations(request.user), pk=pk)
     slots = location.slots.all()
     slot_type = request.GET.get('slot_type', '')
     if slot_type in dict(ParkingSlot.TYPE_CHOICES):
         slots = slots.filter(slot_type=slot_type)
+    slots = sorted(slots, key=natural_slot_key)
     counts = {r['status']: r['n'] for r in location.slots.values('status').annotate(n=Count('id'))}
     return render(request, 'parking/location_detail.html', {
         'location': location, 'slots': slots, 'slot_type': slot_type, 'slot_types': ParkingSlot.TYPE_CHOICES,

@@ -7,6 +7,14 @@ availability on a dashboard with charts. Everything is also available through a 
 Built with **Python, Django, Django REST Framework, Django Templates, HTML, CSS and JavaScript** (Chart.js for the charts). SQLite by default; MySQL by configuration.
 No React or Node.js (Node is only needed to run the optional Postman/Newman API tests).
 
+![SmartPark home page](docs/screenshots/home.png)
+
+| Booking | Admin dashboard |
+|---|---|
+| ![Booking page with live fee estimate](docs/screenshots/book.png) | ![Admin dashboard with charts](docs/screenshots/dashboard.png) |
+
+More screenshots (phone layouts, locations, login, history) are in [docs/screenshots/](docs/screenshots/).
+
 ## Quick start
 
 ```bash
@@ -27,6 +35,7 @@ Configuration is optional for development: copy `.env.example` to `.env` to chan
 
 | Document | What is in it |
 |---|---|
+| [docs/screenshots/](docs/screenshots/) | Screenshots of the main pages on desktop and phone, produced by `tools/screenshots.mjs` |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to use the site as a driver and as an administrator, plus a 10-minute demonstration script |
 | [docs/API.md](docs/API.md) | Every REST endpoint with parameters, rules, errors and real example responses |
 | [docs/postman/](docs/postman/) | Postman collection and environment (64 requests, 109 assertions) |
@@ -64,8 +73,8 @@ apps/bookings/     vehicles and bookings: rules, services, pages, API, no-show c
 apps/payments/     pricing, simulated payments, refunds, admin payment status, API
 apps/dashboard/    admin statistics, bookings and users management, CSV export, summary API
 apps/core/         home page, security headers, shared helpers, cross-cutting tests
-templates/ static/ HTML templates; CSS and JavaScript (no inline scripts); vendored Chart.js
-docs/ tools/       documentation and the generator that keeps API/DB docs and Postman files in sync
+templates/ static/ HTML templates; CSS design system, SVG illustrations and icons, JavaScript (no inline scripts); vendored Chart.js
+docs/ tools/       documentation, screenshots, and the tools that keep the docs in sync (build_docs.py) and check the UI in a real browser (screenshots.mjs)
 ```
 
 ## Tests
@@ -85,7 +94,7 @@ secure cookies/HTTPS redirect/HSTS in production, and a start-up guard that refu
 
 ## Known limitations
 
-Payments are simulated; no password-reset or email flow; API tokens do not expire; not yet deployed to a live host, tested on MySQL, or checked in a real browser. The full list is in
+Payments are simulated; no password-reset or email flow; API tokens do not expire; not yet deployed to a live host, tested on MySQL, or checked on Firefox, Safari or a physical phone (the pages were checked in headless Chrome only). The full list is in
 [docs/REQUIREMENTS_CHECKLIST.md](docs/REQUIREMENTS_CHECKLIST.md).
 
 ## Third-party

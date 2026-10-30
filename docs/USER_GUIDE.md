@@ -1,5 +1,7 @@
 # User guide and demonstration script
 
+Screenshots of every main page, on desktop and phone, are in [screenshots/](screenshots/).
+
 ## For drivers (users)
 
 1. **Create an account.** *Register* (top right): username, name, email, optional phone, password. You are logged in straight away.

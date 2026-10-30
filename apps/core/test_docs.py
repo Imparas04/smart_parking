@@ -108,6 +108,17 @@ class DocumentationHygieneTests(SimpleTestCase):
             return
         self.assertIn('jobs', yaml.safe_load(ci))
 
+    def test_screenshot_tool_is_present_valid_and_documented(self):
+        import shutil
+        tool = PROJECT / 'tools' / 'screenshots.mjs'
+        self.assertTrue(tool.is_file())
+        self.assertIn('tools/screenshots.mjs', (PROJECT / 'docs' / 'TESTING.md').read_text())
+        if shutil.which('node'):
+            r = subprocess.run(['node', '--check', str(tool)], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+        for name in ('home', 'home-mobile', 'parking', 'location', 'login', 'history', 'booking', 'book', 'dashboard', 'dashboard-mobile'):
+            self.assertTrue((PROJECT / 'docs' / 'screenshots' / f'{name}.png').is_file(), name)
+
     def test_requirements_files(self):
         base = (PROJECT / 'requirements.txt').read_text().lower()
         self.assertIn('django', base)

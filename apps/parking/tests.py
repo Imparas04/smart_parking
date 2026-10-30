@@ -255,3 +255,14 @@ class ApiSurfaceTests(TestCase):
         self.assertEqual(self.client.get('/api/parking/').status_code, 404)
         self.assertEqual(self.client.get('/api/parking/locations.json').status_code, 404)
         self.assertEqual(self.client.get('/api/parking/locations/').status_code, 200)
+
+
+class NaturalSlotOrderTests(TestCase):
+    def test_slots_are_listed_in_natural_order_on_the_location_page(self):
+        from .views import natural_slot_key
+        loc = make_location()
+        for number in ('A-10', 'A-2', 'A-1', 'B-1', 'A-11', 'A-3'):
+            make_slot(loc, number)
+        r = self.client.get(loc.get_absolute_url())
+        self.assertEqual([s.slot_number for s in r.context['slots']], ['A-1', 'A-2', 'A-3', 'A-10', 'A-11', 'B-1'])
+        self.assertEqual(sorted(['10', '9', 'x', '2a'], key=lambda n: natural_slot_key(type('S', (), {'slot_number': n}))), ['2a', '9', '10', 'x'])

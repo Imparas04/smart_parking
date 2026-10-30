@@ -132,7 +132,7 @@ in `config/settings.py` and run `python manage.py createcachetable`.
 ## 8. After deploying
 
 1. Open `/`, `/accounts/login/`, then log in as the admin and open the dashboard.
-2. Check the browser console on the dashboard, the booking form and a booking page: there must be no Content-Security-Policy errors (if there are, set `DJANGO_CSP_REPORT_ONLY=True` while you look into it).
+2. Check the browser console on the dashboard, the booking form and a booking page: there must be no Content-Security-Policy errors (if there are, set `DJANGO_CSP_REPORT_ONLY=True` while you look into it). `tools/screenshots.mjs` does this check automatically against any running copy (see [TESTING.md](TESTING.md)).
 3. Confirm `http://` redirects to `https://`.
 4. Run the API tests against a **staging** copy, not production (the collection registers users and creates bookings): `bash tools/run_postman.sh` runs it against a throw-away local database, or point the Postman environment's `base_url` at staging.
 
